@@ -1,0 +1,14 @@
+node_modules/
+.next/
+.env
+.env.local
+
+releases/
+postgres_data/
+
+*.log
+npm-debug.log*
+
+coverage/
+
+.DS_Store
