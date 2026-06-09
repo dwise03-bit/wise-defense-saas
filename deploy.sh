@@ -1,42 +1,21 @@
 #!/bin/bash
-
 set -e
 
-APP="wise-defense-saas"
-BACKUP_TAG=$(date +%s)
+echo "🚀 DEPLOY START"
 
-echo "🚀 Starting deploy for $APP"
+git fetch origin
+git reset --hard origin/main
 
-# 1. Pull latest code (if git repo exists)
-if [ -d .git ]; then
-  git pull
-fi
+docker compose up -d --build
 
-# 2. Build new images (but DON'T kill old ones yet)
-docker compose build
+sleep 5
 
-# 3. Start new stack in detached mode
-docker compose up -d --remove-orphans
-
-# 4. Wait for containers to stabilize
-echo "⏳ Waiting for services..."
-sleep 10
-
-# 5. Health check (API)
-if curl -s http://localhost:3000 >/dev/null; then
-  echo "✅ API healthy"
+if curl -f http://localhost:3000 >/dev/null 2>&1; then
+  echo "✅ HEALTH OK"
 else
-  echo "❌ API failed — rolling back"
-
-  # rollback strategy: restart previous stable state
-  docker compose down
-  docker compose up -d
-
-  echo "♻️ Rollback complete"
-  exit 1
+  echo "❌ FAILED → ROLLBACK"
+  git reset --hard HEAD~1
+  docker compose up -d --build
 fi
 
-# 6. Cleanup unused images
-docker image prune -f
-
-echo "🎉 Deploy successful"
+echo "🎉 DEPLOY COMPLETE"
