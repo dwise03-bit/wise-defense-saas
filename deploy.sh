@@ -1,21 +1,21 @@
 #!/bin/bash
+
 set -e
 
-echo "🚀 DEPLOY START"
+echo "🚀 Starting deploy..."
 
-git fetch origin
-git reset --hard origin/main
+cd ~/wise-defense-saas
 
-docker compose up -d --build
+echo "📦 Pulling latest code..."
+git pull origin main
 
-sleep 5
+echo "🔨 Rebuilding containers..."
+docker compose build
 
-if curl -f http://localhost:3000 >/dev/null 2>&1; then
-  echo "✅ HEALTH OK"
-else
-  echo "❌ FAILED → ROLLBACK"
-  git reset --hard HEAD~1
-  docker compose up -d --build
-fi
+echo "🔄 Restarting services safely..."
+docker compose up -d --remove-orphans
 
-echo "🎉 DEPLOY COMPLETE"
+echo "🧹 Cleaning old containers..."
+docker compose prune -f || true
+
+echo "✅ Deploy complete"

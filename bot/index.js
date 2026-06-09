@@ -26,12 +26,18 @@ client.on("messageCreate", (message) => {
   const args = message.content.trim().split(" ");
   const cmd = args[0];
 
-  if (cmd === "!status") return run(message, "wd status");
+  if (cmd === "!status") return run(message, "docker ps --format 'table {{.Names}}\t{{.Status}}'");
   if (cmd === "!update") return run(message, "wd update");
-  if (cmd === "!restart") return run(message, "wd restart");
-  if (cmd === "!logs") return run(message, `wd logs ${args[1] || ""}`);
+  if (cmd === "!restart") return run(message, "docker compose restart");
+  if (cmd === "!logs") return run(message, `docker compose logs --tail=25 ${args[1] || ""}`);
 
   message.reply("Commands: !status !update !restart !logs");
 });
 
 client.login(process.env.BOT_TOKEN);
+
+client.once("ready", () => {
+  console.log("LOGIN SUCCESS:", client.user.tag);
+});
+
+client.login(process.env.BOT_TOKEN).catch(console.error);

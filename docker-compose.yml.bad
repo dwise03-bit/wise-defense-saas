@@ -41,10 +41,5 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-  discord-bot:
-    build: ./bot
-    env_file:
-      - .env
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
+extra_hosts:
+  - "host.docker.internal:host-gateway"
