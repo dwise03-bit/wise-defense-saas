@@ -1,142 +1,139 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 export default function Home() {
+  const [prompt, setPrompt] = useState("");
+  const [response, setResponse] = useState("Hermes Ready");
+  const [status, setStatus] = useState<any>({});
+  const [containers, setContainers] = useState<string[]>([]);
+  const [logs, setLogs] = useState("");
+
+  async function loadAll() {
+    try {
+      const s = await fetch("/api/status").then(r => r.json());
+      setStatus(s);
+
+      const c = await fetch("/api/containers").then(r => r.json());
+      setContainers(c.containers || []);
+
+      const l = await fetch("/api/logs").then(r => r.json());
+      setLogs(l.logs || "");
+    } catch {}
+  }
+
+  useEffect(() => {
+    loadAll();
+
+    const interval = setInterval(loadAll, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  async function askHermes() {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ prompt })
+    });
+
+    const data = await r.json();
+    setResponse(data.response);
+  }
+
+  async function action(endpoint:string) {
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "x-admin-key": "WiseDefenseSecure2026"
+      }
+    });
+
+    const data = await r.json();
+
+    alert(data.message);
+
+    loadAll();
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white p-4">
+    <div style={{
+      background:"#0a0a0a",
+      color:"white",
+      minHeight:"100vh",
+      padding:"20px",
+      fontFamily:"Arial"
+    }}>
+      <h1>🛡 Wise Defense Command Center</h1>
 
-      <div className="mb-4 rounded-xl border border-blue-500/30 bg-zinc-950 p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-black text-blue-400">
-              WISE TOUCH
-            </h1>
+      <h2>System Status</h2>
 
-            <p className="text-zinc-400">
-              AI COMMAND CENTER
-            </p>
-          </div>
-
-          <div className="text-green-400 font-bold">
-            ● ONLINE
-          </div>
+      {Object.entries(status).map(([k,v]) => (
+        <div key={k}>
+          {String(v)==="online" ? "🟢" : "🔴"} {k}
         </div>
-      </div>
+      ))}
 
-      <div className="grid gap-4 grid-cols-1 xl:grid-cols-[250px_1fr_300px]">
+      <hr />
 
-        {/* Sidebar */}
-        <div className="rounded-xl border border-blue-500/30 bg-zinc-950 p-4">
+      <h2>Containers</h2>
 
-          <div className="space-y-4 text-zinc-300">
+      {containers.map(c => (
+        <div key={c}>📦 {c}</div>
+      ))}
 
-            <div>🏠 Dashboard</div>
-            <div>🤖 AI Command Center</div>
-            <div>📁 Projects</div>
-            <div>🚀 Deployments</div>
-            <div>🖥 Infrastructure</div>
-            <div>👥 Customers</div>
-            <div>⚙️ Settings</div>
+      <hr />
 
-          </div>
+      <h2>Hermes AI</h2>
 
-        </div>
+      <textarea
+        value={prompt}
+        onChange={(e)=>setPrompt(e.target.value)}
+        placeholder="Ask Hermes..."
+        style={{width:"100%",height:"120px"}}
+      />
 
-        {/* Center */}
-        <div className="space-y-4">
+      <br /><br />
 
-          <div className="rounded-xl border border-blue-500/30 bg-zinc-950 p-6">
+      <button onClick={askHermes}>
+        Send
+      </button>
 
-            <h2 className="text-3xl font-bold text-blue-400">
-              AI Terminal
-            </h2>
+      <pre>{response}</pre>
 
-            <div className="mt-6 rounded-lg border border-zinc-800 bg-black p-4 text-zinc-300">
-              Yo! I'm ready to help you build, create, and scale.
-              <br />
-              <br />
-              What's the mission today?
-            </div>
+      <hr />
 
-            <input
-              className="mt-4 w-full rounded-lg bg-zinc-900 p-3 outline-none"
-              placeholder="Ask Hermes..."
-            />
+      <h2>Deployment Center</h2>
 
-            <button className="mt-4 rounded bg-blue-600 px-6 py-3">
-              SEND
-            </button>
+      <button onClick={() => action("/api/restart-api")}>
+        Restart API
+      </button>
 
-          </div>
+      <button onClick={() => action("/api/restart-worker")}>
+        Restart Worker
+      </button>
 
-          <div className="rounded-xl border border-blue-500/30 bg-zinc-950 p-6">
+      <button onClick={() => action("/api/restart-discord")}>
+        Restart Discord
+      </button>
 
-            <h3 className="text-xl text-blue-400">
-              Quick Actions
-            </h3>
+      <button onClick={() => action("/api/deploy")}>
+        Deploy
+      </button>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+      <hr />
 
-              <button className="rounded bg-blue-600 p-3">
-                Brand Builder
-              </button>
+      <h2>Live Logs</h2>
 
-              <button className="rounded bg-blue-600 p-3">
-                Business Blueprint
-              </button>
-
-              <button className="rounded bg-blue-600 p-3">
-                Deploy
-              </button>
-
-              <button className="rounded bg-blue-600 p-3">
-                Infrastructure
-              </button>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* Right */}
-        <div className="space-y-4">
-
-          <div className="rounded-xl border border-blue-500/30 bg-zinc-950 p-4">
-
-            <h3 className="font-bold text-blue-400">
-              System Status
-            </h3>
-
-            <div className="mt-4 space-y-2">
-
-              <div>🟢 API</div>
-              <div>🟢 PostgreSQL</div>
-              <div>🟢 Redis</div>
-              <div>🟢 Discord Bot</div>
-              <div>🟢 Ollama</div>
-
-            </div>
-
-          </div>
-
-          <div className="rounded-xl border border-blue-500/30 bg-zinc-950 p-4">
-
-            <h3 className="font-bold text-blue-400">
-              Recent Projects
-            </h3>
-
-            <div className="mt-4 space-y-2">
-
-              <div>Wise Touch V2</div>
-              <div>Deploy Engine</div>
-              <div>Business Builder</div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
+      <pre style={{
+        maxHeight:"300px",
+        overflow:"auto",
+        whiteSpace:"pre-wrap"
+      }}>
+        {logs}
+      </pre>
     </div>
   );
 }

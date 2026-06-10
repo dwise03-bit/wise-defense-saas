@@ -34,10 +34,6 @@ services:
     build:
       context: ./dashboard-v2
     container_name: wise-dashboard-v2
-    env_file:
-      - .env
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "3001:3000"
     restart: unless-stopped
