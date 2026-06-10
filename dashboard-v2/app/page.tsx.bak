@@ -66,7 +66,7 @@ export default function Home() {
       padding:"20px",
       fontFamily:"Arial"
     }}>
-      <h1>W² Command Center™</h1>
+      <h1>🛡 Wise Defense Command Center</h1>
 
       <h2>System Status</h2>
 
