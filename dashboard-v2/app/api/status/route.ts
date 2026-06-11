@@ -1,5 +1,7 @@
 export async function GET() {
   return Response.json({
-    status: "ok"
+    dashboard: "online",
+    api: "online",
+    status: "online"
   });
 }
