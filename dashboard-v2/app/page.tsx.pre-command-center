@@ -64,14 +64,14 @@ export default function Home() {
     }}>
       <div className="card" style={{marginBottom:"20px"}}>
         <h1 style={{margin:0,fontSize:"32px"}}>
-          WISE² Command Center™
+          W² Command Center™
         </h1>
 
         <div style={{
           color:"#9ca3af",
           marginTop:"8px"
         }}>
-          Build. Organize. Scale. Repeat.
+          Wise Defense Platform • Security Operations Center
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export default function Home() {
 
       <hr />
 
-      <h2>Infrastructure</h2>
+      <h2>Containers</h2>
 
       <div className="container-grid">
         {containers.map(c => (
@@ -116,7 +116,7 @@ export default function Home() {
 
       <hr />
 
-      <h2>Wise Imp™ AI Co-Pilot</h2>
+      <h2>Hermes AI</h2>
 
       <textarea
         value={prompt}
@@ -135,7 +135,7 @@ export default function Home() {
 
       <hr />
 
-      <h2>Flow Engine™</h2>
+      <h2>Deployment Center</h2>
 
       <button onClick={() => action("/api/restart-api")}>
         Restart API
