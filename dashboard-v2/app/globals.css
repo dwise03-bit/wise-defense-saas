@@ -1,14 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #070b14;
-  --card: #111827;
-  --card2: #1f2937;
-  --text: #f9fafb;
-  --muted: #9ca3af;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --accent: #3b82f6;
+  --wise-midnight-black: #05070D;
+  --wise-panel-black: #07111F;
+  --wise-chaos-blue: #005BFF;
+  --wise-electric-blue: #00AEEF;
+  --wise-neon-blue: #007BFF;
+  --wise-ice-white: #EAF7FF;
+  --wise-steel-silver: #AEB7C2;
+  --wise-soft-gray: #7F8FA6;
+  --wise-success-green: #00FF9C;
+
+  --wise-border-blue: rgba(0,174,239,.38);
+  --wise-glow-blue: 0 0 24px rgba(0,174,239,.45);
+  --wise-heavy-glow: 0 0 48px rgba(0,91,255,.65);
+
+  --wise-radius-card: 22px;
+  --wise-radius-button: 14px;
 }
 
 * {
@@ -19,65 +27,66 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-body {
   min-height: 100vh;
+  font-family: Inter, Arial, Helvetica, sans-serif;
+
+  background:
+    radial-gradient(circle at center,
+      rgba(0,91,255,.18),
+      transparent 45%),
+    linear-gradient(
+      180deg,
+      #05070D 0%,
+      #02040A 100%
+    );
+
+  color: var(--wise-ice-white);
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px;
-  padding: 16px;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background-image:
+    linear-gradient(rgba(0,174,239,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,174,239,.05) 1px, transparent 1px);
+
+  background-size: 40px 40px;
+
+  pointer-events: none;
+  z-index: -1;
 }
 
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
-  gap: 12px;
+.wise-card {
+  background: rgba(7,17,31,.76);
+  border: 1px solid var(--wise-border-blue);
+  border-radius: var(--wise-radius-card);
+  box-shadow: var(--wise-glow-blue);
+  backdrop-filter: blur(18px);
 }
 
-.container-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
-  gap: 12px;
+.wise-card:hover {
+  box-shadow: var(--wise-heavy-glow);
 }
 
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-button {
-  background: var(--accent);
+.wise-button {
+  background: rgba(0,91,255,.12);
+  border: 1px solid var(--wise-electric-blue);
   color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 10px;
-  cursor: pointer;
+  padding: 12px 22px;
+  border-radius: var(--wise-radius-button);
+  text-decoration: none;
+  box-shadow: var(--wise-glow-blue);
+  transition: .25s;
 }
 
-button:hover {
-  opacity: .9;
+.wise-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--wise-heavy-glow);
 }
 
-textarea {
-  width: 100%;
-  min-height: 120px;
-  border-radius: 10px;
-  border: 1px solid #374151;
-  background: #0f172a;
-  color: white;
-  padding: 12px;
-}
-
-.logs {
-  max-height: 350px;
-  overflow: auto;
-  white-space: pre-wrap;
+.wise-heading {
+  color: var(--wise-ice-white);
+  text-shadow: 0 0 18px rgba(0,174,239,.75);
 }

@@ -12,3 +12,14 @@ npm-debug.log*
 coverage/
 
 .DS_Store
+backups/
+*.tar.gz
+
+# Backups
+backups/
+*.tar.gz
+*.zip
+backups/
+*.tar.gz
+backups/
+*.tar.gz

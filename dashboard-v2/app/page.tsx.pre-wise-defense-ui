@@ -1,0 +1,81 @@
+"use client";
+
+import Image from "next/image";
+
+export default function Home() {
+  return (
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+        position: "relative",
+        overflow: "hidden"
+      }}
+    >
+      <Image
+        src="/hero.png"
+        alt="WISE² Hero"
+        fill
+        priority
+        style={{
+          objectFit: "cover"
+        }}
+      />
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.55)"
+        }}
+      />
+
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          color: "white"
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "64px",
+            margin: 0,
+            color: "#4FC3FF"
+          }}
+        >
+          WISE² COMMAND CENTER™
+        </h1>
+
+        <p
+          style={{
+            fontSize: "24px",
+            marginTop: "20px"
+          }}
+        >
+          Build. Organize. Scale.
+        </p>
+
+        <a
+          href="/dashboard"
+          style={{
+            marginTop: "40px",
+            padding: "16px 32px",
+            background: "#007BFF",
+            color: "white",
+            textDecoration: "none",
+            borderRadius: "10px"
+          }}
+        >
+          Enter Command Center
+        </a>
+      </div>
+    </div>
+  );
+}

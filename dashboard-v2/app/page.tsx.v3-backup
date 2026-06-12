@@ -1,0 +1,186 @@
+"use client";
+
+import Image from "next/image";
+
+const cards = [
+  { title: "Dashboard", href: "/dashboard" },
+  { title: "Infrastructure", href: "/infrastructure" },
+  { title: "Operations", href: "/operations" },
+  { title: "Intelligence", href: "/intelligence" },
+  { title: "Business", href: "/business" },
+  { title: "Docs", href: "/docs" },
+  { title: "Settings", href: "/settings" }
+];
+
+export default function Home() {
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#050505",
+        color: "#F5F7FA"
+      }}
+    >
+      <section
+        style={{
+          position: "relative",
+          minHeight: "100vh",
+          overflow: "hidden"
+        }}
+      >
+        <Image
+          src="/dashboard-art/dashboard-main.png"
+          alt="Wise Defense Command Center"
+          fill
+          priority
+          style={{
+            objectFit: "cover",
+            opacity: 0.25
+          }}
+        />
+
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(to bottom, rgba(5,5,5,.65), rgba(5,5,5,.95))"
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
+            zIndex: 5,
+            maxWidth: "1400px",
+            margin: "0 auto",
+            padding: "60px 30px"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+              marginBottom: "40px"
+            }}
+          >
+            <Image
+              src="/branding/wise-defense-logo-primary.png"
+              alt="Wise Defense"
+              width={90}
+              height={90}
+            />
+
+            <div>
+              <h1
+                style={{
+                  fontSize: "3.5rem",
+                  margin: 0,
+                  color: "#4FC3FF"
+                }}
+              >
+                WISE DEFENSE
+              </h1>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#C0C0C0"
+                }}
+              >
+                Command Center V3
+              </p>
+            </div>
+          </div>
+
+          <h2
+            style={{
+              fontSize: "2rem",
+              marginBottom: "15px"
+            }}
+          >
+            Build. Organize. Scale.
+          </h2>
+
+          <p
+            style={{
+              maxWidth: "800px",
+              fontSize: "1.1rem",
+              lineHeight: 1.8,
+              color: "#C0C0C0"
+            }}
+          >
+            Production-grade SaaS infrastructure with Docker,
+            Traefik, PostgreSQL, Redis, Workers,
+            Discord automation, and Hermes AI integration.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(250px,1fr))",
+              gap: "20px",
+              marginTop: "50px"
+            }}
+          >
+            {cards.map((card) => (
+              <a
+                key={card.title}
+                href={card.href}
+                style={{
+                  background: "#111111",
+                  border: "1px solid #007BFF",
+                  borderRadius: "16px",
+                  padding: "24px",
+                  textDecoration: "none",
+                  color: "#F5F7FA"
+                }}
+              >
+                <h3>{card.title}</h3>
+                <p style={{ color: "#A0A0A0" }}>
+                  Open {card.title}
+                </p>
+              </a>
+            ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: "80px",
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(350px,1fr))",
+              gap: "25px"
+            }}
+          >
+            <Image
+              src="/dashboard-art/wise-defense-ecosystem.png"
+              alt="Infrastructure"
+              width={800}
+              height={500}
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: "18px"
+              }}
+            />
+
+            <Image
+              src="/dashboard-art/flow-engine-module.png"
+              alt="Flow Engine"
+              width={800}
+              height={500}
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: "18px"
+              }}
+            />
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

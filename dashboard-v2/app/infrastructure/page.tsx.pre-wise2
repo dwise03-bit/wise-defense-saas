@@ -1,0 +1,51 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+export default function InfrastructurePage() {
+  const [status, setStatus] = useState<any>({});
+  const [containers, setContainers] = useState<string[]>([]);
+
+  async function loadData() {
+    try {
+      const s = await fetch("/api/status").then((r) => r.json());
+      setStatus(s);
+
+      const c = await fetch("/api/containers").then((r) => r.json());
+      setContainers(c.containers || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#050505", color:"#F5F7FA", padding:"30px" }}>
+      <h1 style={{ color:"#4FC3FF" }}>W² Infrastructure Command Center</h1>
+
+      <div style={{ marginTop:"20px" }}>
+        <h2>System Status</h2>
+        <p>Dashboard: {status.dashboard || "ONLINE"}</p>
+        <p>API: {status.api || "ONLINE"}</p>
+        <p>Platform: {status.status || "ONLINE"}</p>
+      </div>
+
+      <div style={{ marginTop:"30px" }}>
+        <h2>Containers</h2>
+        {containers.map((c,i) => (
+          <div key={i}>📦 {c}</div>
+        ))}
+      </div>
+
+      <div style={{ marginTop:"30px" }}>
+        <h2>Server</h2>
+        <p>IP: 51.81.80.252</p>
+      </div>
+    </div>
+  );
+}
