@@ -1,10 +1,17 @@
 import { execSync } from "child_process";
+import fs from "fs";
 
 export async function POST(req: Request) {
   try {
     const { prompt } = await req.json();
 
-    const provider = process.env.AI_PROVIDER || "hermes";
+    let provider = "hermes";
+
+    try {
+      provider = JSON.parse(
+        fs.readFileSync("./data/provider.json","utf8")
+      ).provider;
+    } catch {}
 
     const memory = execSync(
       "free | grep Mem | awk '{printf(\"%.0f\", $3/$2 * 100.0)}'"
@@ -23,8 +30,6 @@ export async function POST(req: Request) {
     ).toString().trim();
 
     const systemContext = `
-Live Wise Defense Status
-
 Memory Usage: ${memory}%
 Disk Usage: ${disk}%
 Running Containers: ${containers}
@@ -32,19 +37,13 @@ Uptime: ${uptime}
 `;
 
     if (provider === "claude") {
-      const apiKey = process.env.ANTHROPIC_API_KEY;
-
-      if (!apiKey) {
-        throw new Error("ANTHROPIC_API_KEY not configured");
-      }
-
       const response = await fetch(
         "https://api.anthropic.com/v1/messages",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "x-api-key": apiKey,
+            "x-api-key": process.env.ANTHROPIC_API_KEY || "",
             "anthropic-version": "2023-06-01"
           },
           body: JSON.stringify({
@@ -52,11 +51,7 @@ Uptime: ${uptime}
             max_tokens: 2000,
             messages: [{
               role: "user",
-              content: `
-${systemContext}
-
-${prompt}
-`
+              content: systemContext + "\n\n" + prompt
             }]
           })
         }
@@ -65,6 +60,7 @@ ${prompt}
       const data = await response.json();
 
       return Response.json({
+        provider: "claude",
         response: data?.content?.[0]?.text || "No response"
       });
     }
@@ -78,26 +74,7 @@ ${prompt}
         },
         body: JSON.stringify({
           model: "hermes3:8b",
-          prompt: `
-You are Hermes operating inside the Wise Defense Command Center.
-
-Wise Defense Architecture:
-- Docker
-- Traefik
-- Next.js Dashboard
-- Node.js API
-- PostgreSQL
-- Redis
-- Worker Service
-- Discord Bot
-- Ollama Hermes3:8B
-- VPS Infrastructure
-
-${systemContext}
-
-User:
-${prompt}
-`,
+          prompt,
           stream: false
         })
       }
@@ -106,7 +83,8 @@ ${prompt}
     const data = await response.json();
 
     return Response.json({
-      response: data.response || "No response returned"
+      provider: "hermes",
+      response: data.response || "No response"
     });
 
   } catch (err: any) {
