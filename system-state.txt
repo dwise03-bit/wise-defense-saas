@@ -1,0 +1,11 @@
+CONTAINER ID   IMAGE                           COMMAND                  CREATED          STATUS         PORTS                                                                              NAMES
+7ce531b7c66c   wise-defense-saas-dashboard     "docker-entrypoint.s…"   10 minutes ago   Up 4 minutes   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp                                        wise-dashboard-v2
+02e9334b3297   wise-defense-saas-api           "docker-entrypoint.s…"   20 hours ago     Up 3 minutes   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp                                        wise-defense-saas-api-1
+9a5b50925031   nginx:alpine                    "/docker-entrypoint.…"   21 hours ago     Up 21 hours    0.0.0.0:8082->80/tcp, [::]:8082->80/tcp                                            dropshipping-factory-factory-ui-1
+bbcf13f6d112   postgres:16                     "docker-entrypoint.s…"   2 days ago       Up 4 minutes   5432/tcp                                                                           wise-defense-saas-db-1
+21dbde7b2d18   redis:7                         "docker-entrypoint.s…"   2 days ago       Up 4 minutes   6379/tcp                                                                           wise-defense-saas-redis-1
+ee823b7d496c   traefik:v3.4                    "/entrypoint.sh --ap…"   2 days ago       Up 4 minutes   0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp   wise-defense-saas-traefik-1
+97a5855e080c   wise-defense-saas-discord-bot   "docker-entrypoint.s…"   2 days ago       Up 3 minutes                                                                                      wise-defense-saas-discord-bot-1
+4749189d7a19   wise-defense-saas-worker        "docker-entrypoint.s…"   2 days ago       Up 3 minutes                                                                                      wise-defense-saas-worker-1
+e3e70298c1b86a34c53a4022bad8579502dd63d0
+Sat Jun 13 16:54:05 UTC 2026
