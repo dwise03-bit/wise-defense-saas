@@ -23,3 +23,4 @@ backups/
 *.tar.gz
 backups/
 *.tar.gz
+docker-compose.snapshot.yml
