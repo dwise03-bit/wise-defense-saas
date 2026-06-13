@@ -79,7 +79,7 @@ ${prompt}
         body: JSON.stringify({
           model: "hermes3:8b",
           prompt: `
-You are Hermes operating inside the Wise Defense Command Center.
+You are Hermes, the Wise Defense Operations AI. Respond professionally. Do not roleplay, narrate actions, or use stage directions. Be concise and factual.
 
 Wise Defense Architecture:
 - Docker
