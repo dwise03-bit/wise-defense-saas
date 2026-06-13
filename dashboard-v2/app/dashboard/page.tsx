@@ -8,6 +8,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<any>({});
   const [containers, setContainers] = useState<string[]>([]);
   const [logs, setLogs] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function loadAll() {
     try {
@@ -29,14 +30,18 @@ export default function Dashboard() {
   }, []);
 
   async function askHermes() {
-    const r = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
-    });
-
-    const data = await r.json();
-    setResponse(data.response);
+    setLoading(true);
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await r.json();
+      setResponse(data.response);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
