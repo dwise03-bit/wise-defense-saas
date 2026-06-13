@@ -72,7 +72,39 @@ export default function Dashboard() {
       <h2 className="wise-heading">
         System Health
       </h2>
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: "10px",
+    marginBottom: "15px"
+  }}
+>
+  <button className="wise-button"
+    onClick={() => setPrompt("Review the current Wise Defense system status and identify any risks, bottlenecks, disk issues, memory pressure, container failures, or security concerns. Prioritize findings.")}>
+    🩺 Audit System
+  </button>
 
+  <button className="wise-button"
+    onClick={() => setPrompt("Summarize the current Wise Defense infrastructure, running services, and overall operational status in a concise report.")}>
+    📊 Infrastructure Summary
+  </button>
+
+  <button className="wise-button"
+    onClick={() => setPrompt("Analyze the current system state and explain potential causes if a service is slow, unavailable, or behaving unexpectedly.")}>
+    🔍 Diagnose Issue
+  </button>
+
+  <button className="wise-button"
+    onClick={() => setPrompt("Review the latest logs and explain any warnings, errors, failures, or unusual patterns.")}>
+    📜 Analyze Logs
+  </button>
+
+  <button className="wise-button"
+    onClick={() => setPrompt("Based on the current Wise Defense environment, recommend the highest-value next actions for reliability, scalability, automation, and monetization.")}>
+    🚀 Recommend Next Actions
+  </button>
+</div>
       <div
         style={{
           display: "grid",
