@@ -1,0 +1,32 @@
+# --------------------------------------------------------------------
+# Wise Touch Prompt Shop — standalone service
+# Add this block under `services:` in
+# /home/ubuntu/wise-defense-saas/docker-compose.yml
+# alongside dashboard-v3.
+#
+# REQUIRES: Set REPLICATE_API_KEY in .env for image transformation
+# Port 3003: Frontend (React/Vite)
+# Port 5000: Transform API (Node.js/Express)
+# --------------------------------------------------------------------
+
+  wisetouch:
+    build:
+      context: ./wisetouch
+    container_name: wise-touch-shop
+    ports:
+      - "3003:80"
+    restart: unless-stopped
+    depends_on:
+      - wisetouch-api
+
+  wisetouch-api:
+    build:
+      context: ./wisetouch
+      dockerfile: Dockerfile.api
+    container_name: wise-touch-api
+    ports:
+      - "5000:5000"
+    environment:
+      - REPLICATE_API_KEY=${REPLICATE_API_KEY}
+      - NODE_ENV=production
+    restart: unless-stopped

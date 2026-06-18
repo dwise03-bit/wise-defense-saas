@@ -56,6 +56,34 @@ services:
       - "3002:80"
     restart: unless-stopped
 
+  wisetouch:
+    build:
+      context: ./wisetouch
+    container_name: wise-touch-shop
+    ports:
+      - "3003:80"
+    depends_on:
+      - wisetouch-api
+    restart: unless-stopped
+
+  wisetouch-api:
+    build:
+      context: ./wisetouch
+      dockerfile: Dockerfile.api
+    container_name: wise-touch-api
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - OLLAMA_URL=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+    restart: unless-stopped
+
   worker:
     build: ./worker
     env_file:
@@ -69,3 +97,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
+
+volumes:
+  ollama-data:
