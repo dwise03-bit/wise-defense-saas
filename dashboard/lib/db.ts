@@ -12,6 +12,7 @@ export interface User {
   experience_level?: string;
   goals?: string;
   assessment_result?: any;
+  stripe_customer_id?: string;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -29,6 +30,7 @@ export interface Membership {
   status: string;
   price_cents: number;
   billing_cycle: string;
+  stripe_subscription_id?: string;
   renewal_date?: Date;
   created_at: Date;
   updated_at: Date;
