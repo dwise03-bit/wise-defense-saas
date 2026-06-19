@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     let sql = `SELECT id, platform, title, text, shared_at
                FROM social_media_shares
                WHERE user_id = $1`;
-    const params = [payload.userId];
+    const params: (string | number)[] = [payload.userId];
 
     if (platform) {
       sql += ` AND platform = $${params.length + 1}`;
