@@ -1,5 +1,5 @@
 -- Wise Defense Premium Platform - Initial Schema
--- Defines all core tables: users, memberships, sessions, payments, analytics, premium_features, notifications, audit_logs
+-- Defines all core tables: users, memberships, sessions, payments, analytics, premium_features, notifications, audit_logs, content, progress, community_threads, community_posts, feedback, certificates
 
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS users (
   first_name VARCHAR(100),
   last_name VARCHAR(100),
   phone VARCHAR(20),
+  tier VARCHAR(50),
+  experience_level VARCHAR(50),
+  goals TEXT,
+  assessment_result JSONB,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -45,6 +49,9 @@ CREATE TABLE IF NOT EXISTS sessions (
   student_ids BIGINT[] DEFAULT ARRAY[]::BIGINT[],
   status VARCHAR(50) NOT NULL DEFAULT 'scheduled',
   recording_url VARCHAR(255),
+  location VARCHAR(255),
+  outcome_notes TEXT,
+  type VARCHAR(50),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   FOREIGN KEY (instructor_id) REFERENCES users(id) ON DELETE CASCADE
@@ -142,3 +149,120 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
+
+-- Content: course materials, modules, lessons, and resources
+CREATE TABLE IF NOT EXISTS content (
+  id BIGSERIAL PRIMARY KEY,
+  creator_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  content_type VARCHAR(50) NOT NULL,
+  category VARCHAR(100),
+  difficulty_level VARCHAR(50),
+  duration_minutes INTEGER,
+  status VARCHAR(50) NOT NULL DEFAULT 'draft',
+  tags TEXT[],
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_content_creator_id ON content(creator_id);
+CREATE INDEX idx_content_status ON content(status);
+CREATE INDEX idx_content_category ON content(category);
+
+-- Progress: track user progress through content
+CREATE TABLE IF NOT EXISTS progress (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  content_id BIGINT NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'not_started',
+  completion_percentage INTEGER DEFAULT 0,
+  last_accessed_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_progress_user_id ON progress(user_id);
+CREATE INDEX idx_progress_content_id ON progress(content_id);
+CREATE INDEX idx_progress_status ON progress(status);
+
+-- Community threads: discussion threads for community engagement
+CREATE TABLE IF NOT EXISTS community_threads (
+  id BIGSERIAL PRIMARY KEY,
+  creator_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  category VARCHAR(100),
+  status VARCHAR(50) NOT NULL DEFAULT 'open',
+  is_pinned BOOLEAN DEFAULT false,
+  reply_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_community_threads_creator_id ON community_threads(creator_id);
+CREATE INDEX idx_community_threads_status ON community_threads(status);
+CREATE INDEX idx_community_threads_category ON community_threads(category);
+
+-- Community posts: individual posts within threads
+CREATE TABLE IF NOT EXISTS community_posts (
+  id BIGSERIAL PRIMARY KEY,
+  thread_id BIGINT NOT NULL,
+  creator_id BIGINT NOT NULL,
+  content TEXT NOT NULL,
+  is_edited BOOLEAN DEFAULT false,
+  edited_at TIMESTAMPTZ,
+  deleted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (thread_id) REFERENCES community_threads(id) ON DELETE CASCADE,
+  FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_community_posts_thread_id ON community_posts(thread_id);
+CREATE INDEX idx_community_posts_creator_id ON community_posts(creator_id);
+
+-- Feedback: user feedback and reviews
+CREATE TABLE IF NOT EXISTS feedback (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  content_id BIGINT,
+  feedback_type VARCHAR(50) NOT NULL,
+  rating INTEGER,
+  comment TEXT,
+  status VARCHAR(50) NOT NULL DEFAULT 'open',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_feedback_user_id ON feedback(user_id);
+CREATE INDEX idx_feedback_content_id ON feedback(content_id);
+CREATE INDEX idx_feedback_status ON feedback(status);
+
+-- Certificates: user earned certificates
+CREATE TABLE IF NOT EXISTS certificates (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  content_id BIGINT,
+  title VARCHAR(255) NOT NULL,
+  issued_at TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
+  certificate_url VARCHAR(255),
+  verification_code VARCHAR(255) UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_certificates_user_id ON certificates(user_id);
+CREATE INDEX idx_certificates_content_id ON certificates(content_id);
+CREATE INDEX idx_certificates_verification_code ON certificates(verification_code);
