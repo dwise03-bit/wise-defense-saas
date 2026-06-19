@@ -1,6 +1,22 @@
 module.exports = {
   apps: [
     {
+      name: 'repair-agent',
+      script: './dashboard/agents/repair-agent.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wise_defense?sslmode=disable',
+      },
+      error_file: './logs/repair-agent-error.log',
+      out_file: './logs/repair-agent.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      max_memory_restart: '256M',
+      autorestart: true,
+      watch: false,
+    },
+    {
       name: 'scheduler-agent',
       script: './dashboard/agents/scheduler-agent.js',
       instances: 1,
