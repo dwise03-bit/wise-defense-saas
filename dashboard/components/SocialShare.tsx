@@ -1,6 +1,6 @@
 'use client';
 
-import { Share2, Twitter, Instagram, Linkedin, Mail } from 'lucide-react';
+import { Share2, Mail, Linkedin } from 'lucide-react';
 import { useState } from 'react';
 
 interface SocialShareProps {
@@ -50,7 +50,7 @@ export default function SocialShare({ title, text, url, hashtags = [] }: SocialS
             }}
             className="w-full flex items-center gap-3 px-4 py-2 text-gray hover:text-neon-red hover:bg-gray-900 rounded transition-colors"
           >
-            <Twitter size={18} />
+            <Share2 size={18} />
             <span>Twitter</span>
           </button>
 
