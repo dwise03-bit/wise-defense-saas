@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import MembershipSelector from '@/components/MembershipSelector';
 import { Check, X } from 'lucide-react';
 
@@ -62,6 +63,19 @@ export default function PricingPage() {
 
   return (
     <main className="w-full">
+      {/* Header */}
+      <header className="bg-white shadow-sm py-4 px-4 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <Link href="/">
+            <Image src="/logo-w2.png" alt="Wise Defense" width={160} height={50} className="h-12 w-auto" />
+          </Link>
+          <nav className="flex gap-6">
+            <Link href="/" className="text-gray-700 hover:text-blue-600 font-medium">Home</Link>
+            <Link href="/auth/login" className="text-gray-700 hover:text-blue-600 font-medium">Log In</Link>
+          </nav>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 px-4">
         <div className="max-w-6xl mx-auto text-center">
