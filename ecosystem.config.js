@@ -152,5 +152,23 @@ module.exports = {
       autorestart: true,
       watch: false,
     },
+    {
+      name: 'discord-control-bot',
+      script: './dashboard/agents/discord-control-bot.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wise_defense?sslmode=disable',
+        DISCORD_TOKEN: process.env.DISCORD_CONTROL_BOT_TOKEN || process.env.DISCORD_TOKEN || '',
+        DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID || '',
+      },
+      error_file: './logs/discord-control-bot-error.log',
+      out_file: './logs/discord-control-bot.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      max_memory_restart: '256M',
+      autorestart: true,
+      watch: false,
+    },
   ],
 };
