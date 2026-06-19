@@ -321,6 +321,62 @@ export async function updateSessionRecordingUrl(sessionId: number, recordingUrl:
 }
 
 /**
+ * Get available sessions by date and optional type
+ */
+export async function getAvailableSessionsByDate(date: string, type?: string): Promise<Session[]> {
+  let query_text = `
+    SELECT id, instructor_id, title, description, scheduled_time, duration_minutes, student_ids, status, recording_url, location, outcome_notes, type, created_at, updated_at
+    FROM sessions
+    WHERE DATE(scheduled_time) = $1
+    AND (student_ids IS NULL OR array_length(student_ids, 1) IS NULL)
+  `;
+
+  const params: any[] = [date];
+
+  if (type) {
+    query_text += ` AND type = $2`;
+    params.push(type);
+  }
+
+  query_text += ` ORDER BY scheduled_time ASC`;
+
+  const result = await query<Session>(query_text, params);
+  return result.rows;
+}
+
+/**
+ * Book a session for a student
+ */
+export async function bookSession(sessionId: number, studentId: number): Promise<Session> {
+  const result = await query<Session>(
+    `UPDATE sessions
+     SET student_ids = CASE
+       WHEN student_ids IS NULL THEN ARRAY[$1]::bigint[]
+       ELSE array_append(student_ids, $1)
+     END,
+     updated_at = NOW()
+     WHERE id = $2
+     RETURNING id, instructor_id, title, description, scheduled_time, duration_minutes, student_ids, status, recording_url, location, outcome_notes, type, created_at, updated_at`,
+    [studentId, sessionId]
+  );
+  return result.rows[0];
+}
+
+/**
+ * Get sessions booked by a student
+ */
+export async function getStudentBookedSessions(studentId: number): Promise<Session[]> {
+  const result = await query<Session>(
+    `SELECT id, instructor_id, title, description, scheduled_time, duration_minutes, student_ids, status, recording_url, location, outcome_notes, type, created_at, updated_at
+     FROM sessions
+     WHERE student_ids && ARRAY[$1]::bigint[]
+     ORDER BY scheduled_time DESC`,
+    [studentId]
+  );
+  return result.rows;
+}
+
+/**
  * Create a payment record
  */
 export async function createPayment(
