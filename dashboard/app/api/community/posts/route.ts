@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await query(
-      `SELECT cp.id, cp.thread_id, cp.user_id, cp.content, cp.created_at, cp.updated_at,
+      `SELECT cp.id, cp.thread_id, cp.creator_id, cp.content, cp.created_at, cp.updated_at,
               u.email, u.first_name, u.last_name
        FROM community_posts cp
-       JOIN users u ON cp.user_id = u.id
+       JOIN users u ON cp.creator_id = u.id
        WHERE cp.thread_id = $1
        ORDER BY cp.created_at ASC
        LIMIT $2 OFFSET $3`,
@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO community_posts (thread_id, user_id, content)
+      `INSERT INTO community_posts (thread_id, creator_id, content)
        VALUES ($1, $2, $3)
-       RETURNING id, thread_id, user_id, content, created_at, updated_at`,
+       RETURNING id, thread_id, creator_id, content, created_at, updated_at`,
       [threadId, payload.userId, content]
     );
 

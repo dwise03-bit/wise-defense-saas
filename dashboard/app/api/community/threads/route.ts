@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     const result = await query(
-      `SELECT id, user_id, title, description, created_at, updated_at,
+      `SELECT id, creator_id, title, description, created_at, updated_at,
               (SELECT COUNT(*) FROM community_posts WHERE thread_id = community_threads.id) as post_count
        FROM community_threads
        ORDER BY created_at DESC
@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO community_threads (user_id, title, description)
+      `INSERT INTO community_threads (creator_id, title, description)
        VALUES ($1, $2, $3)
-       RETURNING id, user_id, title, description, created_at, updated_at`,
+       RETURNING id, creator_id, title, description, created_at, updated_at`,
       [payload.userId, title, description]
     );
 
