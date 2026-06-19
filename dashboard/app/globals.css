@@ -45,3 +45,51 @@ body {
 .transition-glow {
   transition: box-shadow 200ms ease-in-out, border-color 200ms ease-in-out;
 }
+
+/* Primary Action Button */
+.btn-primary {
+  background-color: #0a0a0a;
+  border: 2px solid #ff1744;
+  color: #ffffff;
+  padding: 1rem 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 0.125rem;
+  cursor: pointer;
+  transition: all 200ms ease-in-out;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
+}
+
+.btn-primary:focus {
+  border-width: 3px;
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
+  outline: none;
+}
+
+/* Secondary Action Button */
+.btn-secondary {
+  background-color: #ff1744;
+  color: #0a0a0a;
+  padding: 1rem 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 0.125rem;
+  border: none;
+  cursor: pointer;
+  transition: all 200ms ease-in-out;
+}
+
+.btn-secondary:hover {
+  background-color: #cc0000;
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
+}
+
+.btn-secondary:focus {
+  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
+  outline: none;
+}
