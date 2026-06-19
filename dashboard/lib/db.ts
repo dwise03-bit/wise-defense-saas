@@ -108,6 +108,35 @@ export interface AuditLog {
   created_at: Date;
 }
 
+export interface Content {
+  id: number;
+  creator_id: number;
+  title: string;
+  description?: string;
+  content_type: string;
+  category?: string;
+  difficulty_level?: string;
+  duration_minutes?: number;
+  status: string;
+  tags?: string[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Progress {
+  id: number;
+  user_id: number;
+  content_id: number;
+  status: string;
+  completion_percentage?: number;
+  last_accessed_at?: Date;
+  completed_at?: Date;
+  notes?: string;
+  score?: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 // Validate DATABASE_URL is set
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
@@ -562,6 +591,66 @@ export async function getUserAuditLogs(userId: number, limit: number = 50): Prom
     [userId, limit]
   );
   return result.rows;
+}
+
+/**
+ * Get total drill count
+ */
+export async function getTotalDrillCount(): Promise<number> {
+  const result = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM content WHERE content_type = 'drill'`
+  );
+  return parseInt(result.rows[0]?.count || '0', 10);
+}
+
+/**
+ * Get user's completed drill count
+ */
+export async function getUserCompletedDrillCount(userId: number): Promise<number> {
+  const result = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM progress
+     WHERE user_id = $1
+     AND content_id IN (SELECT id FROM content WHERE content_type = 'drill')
+     AND completed_at IS NOT NULL`,
+    [userId]
+  );
+  return parseInt(result.rows[0]?.count || '0', 10);
+}
+
+/**
+ * Get user's average quiz score
+ */
+export async function getUserAverageQuizScore(userId: number): Promise<number | null> {
+  const result = await query<{ avg_score: number | null }>(
+    `SELECT AVG(completion_percentage) as avg_score FROM progress
+     WHERE user_id = $1
+     AND content_id IN (SELECT id FROM content WHERE content_type = 'quiz')
+     AND completed_at IS NOT NULL`,
+    [userId]
+  );
+  const avgScore = result.rows[0]?.avg_score;
+  return avgScore ? Math.round(avgScore) : null;
+}
+
+/**
+ * Get user's progress summary
+ */
+export async function getUserProgressSummary(userId: number): Promise<{
+  total_drills: number;
+  completed_drills: number;
+  quiz_score: number | null;
+}> {
+  const [totalDrills, completedDrills, quizScore] = await Promise.all([
+    getTotalDrillCount(),
+    getUserCompletedDrillCount(userId),
+    getUserAverageQuizScore(userId),
+  ]);
+
+  return {
+    total_drills: totalDrills,
+    completed_drills: completedDrills,
+    quiz_score: quizScore,
+  };
 }
 
 /**
