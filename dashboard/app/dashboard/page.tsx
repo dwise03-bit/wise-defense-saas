@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import SessionCard from '@/components/SessionCard';
-import ProgressBar from '@/components/ProgressBar';
+import Image from 'next/image';
 
 interface User {
   id: number;
@@ -18,15 +17,12 @@ interface Session {
   date: string;
   time: string;
   type: string;
-  status: string;
-  title?: string;
-  description?: string;
 }
 
 interface Progress {
   total_drills: number;
   completed_drills: number;
-  quiz_score: number | null;
+  quiz_score: number;
 }
 
 export default function DashboardPage() {
@@ -35,189 +31,136 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initializeDashboard = async () => {
-      try {
-        // Check for token and user in localStorage
-        const token = localStorage.getItem('token');
-        const userStr = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth/login');
+      return;
+    }
 
-        if (!token || !userStr) {
-          router.push('/auth/login');
-          return;
-        }
+    setUser({
+      id: 1,
+      email: 'student@example.com',
+      name: 'John Doe',
+      tier: 'pro',
+    });
 
-        const userData = JSON.parse(userStr);
-        setUser(userData);
+    fetch('/api/sessions/user', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setSessions(data));
 
-        // Fetch sessions
-        const sessionsRes = await fetch('/api/sessions/user', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (sessionsRes.ok) {
-          const sessionsData = await sessionsRes.json();
-          setSessions(sessionsData.slice(0, 5)); // Limit to first 5 sessions
-        } else if (sessionsRes.status !== 401) {
-          console.error('Failed to fetch sessions');
-        }
-
-        // Fetch progress
-        const progressRes = await fetch('/api/students/progress', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (progressRes.ok) {
-          const progressData = await progressRes.json();
-          setProgress(progressData);
-        } else if (progressRes.status !== 401) {
-          console.error('Failed to fetch progress');
-        }
-
-        setLoading(false);
-      } catch (err) {
-        console.error('Dashboard initialization error:', err);
-        setError('Failed to load dashboard');
-        setLoading(false);
-      }
-    };
-
-    initializeDashboard();
+    fetch('/api/students/progress', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setProgress(data))
+      .finally(() => setLoading(false));
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/auth/login');
-  };
+  if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-gray">Loading...</div>;
+  if (!user) return <div className="min-h-screen bg-black flex items-center justify-center text-gray">Not authenticated</div>;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
+  const drillPercentage = progress ? (progress.completed_drills / progress.total_drills) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold text-gray-900">Wise Defense Dashboard</h1>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Welcome Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome, {user.name}!
-          </h2>
-          <p className="text-gray-600 mb-4">
-            You're on the <span className="font-semibold capitalize">{user.tier}</span> plan
-          </p>
-
-          <Link
-            href="/booking"
-            className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
+    <main className="bg-black min-h-screen">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-black border-b border-gray-800 py-4 px-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <Link href="/">
+            <Image src="/logo-w2.png" alt="Wise Defense" width={160} height={50} className="h-12 w-auto" />
+          </Link>
+          <button
+            onClick={() => {
+              localStorage.removeItem('token');
+              router.push('/');
+            }}
+            className="text-gray hover:text-neon-red transition-glow"
           >
-            Book a Session
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* Welcome Section */}
+      <section className="bg-black py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="heading-silver text-3xl mb-2">Welcome, {user.name}!</h1>
+          <p className="text-gray mb-6">You're on the <span className="text-neon-red font-bold">{user.tier.toUpperCase()}</span> plan</p>
+          <Link href="/booking">
+            <button className="btn-primary">Book a Session</button>
           </Link>
         </div>
+      </section>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Sessions Column (2 cols on md) */}
+      {/* Main Grid */}
+      <section className="bg-black py-12 px-4">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Upcoming Sessions */}
           <div className="md:col-span-2">
-            {/* Upcoming Sessions */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Upcoming Sessions
-              </h3>
+            <h2 className="section-heading mb-6">Upcoming Sessions</h2>
+            {sessions.length > 0 ? (
+              <div className="space-y-4">
+                {sessions.slice(0, 5).map((session) => (
+                  <div key={session.id} className="card flex justify-between items-center">
+                    <div>
+                      <p className="heading-silver">{session.date} at {session.time}</p>
+                      <p className="text-gray text-sm capitalize">{session.type} session</p>
+                    </div>
+                    <span className="text-neon-red text-xs font-bold">BOOKED</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray">
+                No sessions booked yet. <Link href="/booking" className="text-neon-red hover:underline">Book one now!</Link>
+              </p>
+            )}
+          </div>
 
-              {sessions.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {sessions.map((session) => (
-                    <SessionCard key={session.id} session={session} />
-                  ))}
+          {/* Progress & Quick Links */}
+          <div className="space-y-6">
+            {/* Progress */}
+            {progress && (
+              <div className="card">
+                <h3 className="heading-silver mb-6 text-lg">Your Progress</h3>
+                <div className="mb-6">
+                  <p className="text-gray text-sm mb-2">Drills Completed</p>
+                  <div className="bg-secondary-black rounded-sm h-4 overflow-hidden">
+                    <div
+                      className="bg-neon-red h-4 transition-all duration-500"
+                      style={{ width: `${drillPercentage}%` }}
+                    />
+                  </div>
+                  <p className="text-gray text-xs mt-2">
+                    {progress.completed_drills} / {progress.total_drills} completed
+                  </p>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">No upcoming sessions booked</p>
-                  <Link
-                    href="/booking"
-                    className="text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Book your first session
-                  </Link>
+                <div>
+                  <p className="text-gray text-sm mb-2">Quiz Score</p>
+                  <div className="flex items-center gap-2">
+                    <span className="heading-silver text-3xl">{progress.quiz_score}%</span>
+                    <span className="text-gray text-sm">Great work!</span>
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Quick Links */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Links</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Link
-                  href="/drills"
-                  className="block text-center p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <p className="font-medium text-gray-900">View Drills</p>
-                  <p className="text-sm text-gray-600">Practice your skills</p>
-                </Link>
-                <Link
-                  href="/community"
-                  className="block text-center p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <p className="font-medium text-gray-900">Community Forum</p>
-                  <p className="text-sm text-gray-600">Connect with others</p>
-                </Link>
-                <Link
-                  href="/sessions"
-                  className="block text-center p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <p className="font-medium text-gray-900">All Sessions</p>
-                  <p className="text-sm text-gray-600">View all available</p>
-                </Link>
-              </div>
+            <div className="card">
+              <h3 className="heading-silver mb-4 text-lg">Quick Links</h3>
+              <ul className="space-y-2">
+                <li><Link href="/dashboard/content" className="text-neon-red hover:underline">View Drills</Link></li>
+                <li><Link href="/community" className="text-neon-red hover:underline">Community Forum</Link></li>
+                <li><Link href="/dashboard/my-sessions" className="text-neon-red hover:underline">All Sessions</Link></li>
+              </ul>
             </div>
           </div>
-
-          {/* Progress Sidebar (1 col on md) */}
-          <div>
-            {progress && <ProgressBar progress={progress} />}
-          </div>
         </div>
-      </main>
-    </div>
+      </section>
+    </main>
   );
 }
