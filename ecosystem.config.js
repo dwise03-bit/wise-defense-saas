@@ -7,7 +7,7 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@db:5432/wise_defense?sslmode=disable',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wise_defense?sslmode=disable',
         RESEND_API_KEY: process.env.RESEND_API_KEY || 're_test_key',
         RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'noreply@wisedefense.com',
         APP_URL: process.env.APP_URL || 'https://wise2.net',
@@ -26,7 +26,7 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@db:5432/wise_defense?sslmode=disable',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wise_defense?sslmode=disable',
         RESEND_API_KEY: process.env.RESEND_API_KEY || 're_test_key',
         RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'noreply@wisedefense.com',
         APP_URL: process.env.APP_URL || 'https://wise2.net',
