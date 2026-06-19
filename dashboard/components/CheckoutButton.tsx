@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 
 interface CheckoutButtonProps {
@@ -9,6 +10,7 @@ interface CheckoutButtonProps {
 }
 
 export default function CheckoutButton({ tier, price }: CheckoutButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,10 +20,9 @@ export default function CheckoutButton({ tier, price }: CheckoutButtonProps) {
 
     try {
       // Get token from localStorage
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       if (!token) {
-        setError('You must be logged in to subscribe');
-        setLoading(false);
+        router.push('/auth/login');
         return;
       }
 
@@ -59,11 +60,8 @@ export default function CheckoutButton({ tier, price }: CheckoutButtonProps) {
         return;
       }
 
-      // Redirect to Stripe hosted checkout using subscription ID
-      // In production, you would use stripe.confirmCardPayment or stripe.confirmSetupIntent
-      // For now, redirect to subscription confirmation (implementation depends on your Stripe setup)
+      // Redirect to Stripe hosted checkout
       window.location.href = `/checkout?subscription_id=${subscription_id}&client_secret=${client_secret}`;
-      setLoading(false);
     } catch (err) {
       console.error('Checkout error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -76,15 +74,11 @@ export default function CheckoutButton({ tier, price }: CheckoutButtonProps) {
       <button
         onClick={handleCheckout}
         disabled={loading}
-        className={`w-full py-2 px-4 rounded-lg font-semibold transition-all duration-200 ${
-          loading
-            ? 'bg-gray-400 text-white cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-        }`}
+        className="btn-primary w-full"
       >
         {loading ? 'Processing...' : `Subscribe - $${price}/month`}
       </button>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-neon-red text-sm">{error}</p>}
     </div>
   );
 }

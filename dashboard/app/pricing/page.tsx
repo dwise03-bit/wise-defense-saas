@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import MembershipSelector from '@/components/MembershipSelector';
+import CheckoutButton from '@/components/CheckoutButton';
 import { Check } from 'lucide-react';
 
 export default function PricingPage() {
@@ -20,6 +21,7 @@ export default function PricingPage() {
           </Link>
           <nav className="flex gap-6">
             <Link href="/" className="text-gray hover:text-neon-red transition-glow">Home</Link>
+            <Link href="/dashboard" className="text-gray hover:text-neon-red transition-glow">Dashboard</Link>
             <Link href="/auth/login" className="text-gray hover:text-neon-red transition-glow">Log In</Link>
           </nav>
         </div>
