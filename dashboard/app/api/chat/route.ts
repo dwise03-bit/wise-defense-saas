@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     if (token) {
       const payload = verifyToken(token);
       if (payload) {
-        userId = payload.userId;
+        userId = String(payload.userId);
       }
     }
 
