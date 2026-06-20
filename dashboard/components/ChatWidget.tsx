@@ -95,7 +95,11 @@ export default function ChatWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 p-4 bg-neon-red text-black rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
+        className="fixed bottom-6 right-6 p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
+        style={{
+          backgroundColor: '#ff1744',
+          color: '#000000',
+        }}
         aria-label="Open chat"
       >
         <MessageCircle size={24} />
@@ -104,9 +108,19 @@ export default function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-secondary-black border-2 border-neon-red rounded-lg shadow-2xl flex flex-col z-50">
+    <div
+      className="fixed bottom-6 right-6 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50"
+      style={{
+        backgroundColor: '#1a1a1a',
+        border: '2px solid #ff1744',
+      }}>
       {/* Header */}
-      <div className="bg-neon-red text-black px-4 py-3 rounded-t-lg flex items-center justify-between">
+      <div
+        className="px-4 py-3 rounded-t-lg flex items-center justify-between"
+        style={{
+          backgroundColor: '#ff1744',
+          color: '#000000',
+        }}>
         <div>
           <h3 className="font-bold">Wise Defense Assistant</h3>
           <p className="text-xs text-black opacity-80">Always here to help</p>
