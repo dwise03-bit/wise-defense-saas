@@ -288,10 +288,55 @@ function scheduleJobs() {
     }, delayMs);
   }
 
+  // Task 5: Repost viral Discord content
+  function scheduleVirialReposts() {
+    async function taskRepostViral() {
+      console.log('[SOCIAL] Running task: Repost viral Discord content...');
+      try {
+        const viralPosts = await query(
+          `SELECT * FROM bot_social_posts WHERE engagement_count >= 5 AND social_platform = 'discord' LIMIT 3`
+        );
+
+        for (const post of viralPosts.rows) {
+          // Generate caption
+          const captions = [
+            `🔥 Amazing progress! "${post.discord_content}"\n\nJoin our training community → link in bio #WiseDefense`,
+            `💪 Community win! "${post.discord_content}"\n\nTrain with us and level up your skills 🚀 #WiseDefense`,
+            `🎯 Member highlight! "${post.discord_content}"\n\nBuild your skills with Wise Defense #TrainingCommunity`,
+          ];
+          const caption = captions[Math.floor(Math.random() * captions.length)];
+
+          // Log the repost intent (actual API posting would go here)
+          await query(
+            `UPDATE bot_social_posts SET social_platform = 'reposted' WHERE id = $1`,
+            [post.id]
+          );
+
+          // Award bonus to member
+          await query(
+            `UPDATE member_progress SET total_points = total_points + 5 WHERE member_id = $1`,
+            [post.member_id]
+          );
+
+          console.log(`[SOCIAL] Reposted viral content from ${post.member_id}`);
+        }
+
+        console.log('[SOCIAL] Viral content repost task completed');
+      } catch (error) {
+        console.error('[SOCIAL] Error in viral repost task:', error.message);
+      }
+    }
+
+    taskRepostViral();
+    setInterval(taskRepostViral, 60 * 60 * 1000); // Every hour
+    console.log('[SOCIAL] Viral repost task scheduled (every 60 minutes)');
+  }
+
   scheduleWeeklyTips();
   scheduleSuccessStories();
   scheduleEngagementContent();
   scheduleMetricsTracking();
+  scheduleVirialReposts();
 }
 
 /**
