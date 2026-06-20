@@ -4,15 +4,35 @@
  */
 
 const { EmbedBuilder } = require('discord.js');
+const pg = require('pg');
 
-// Import engagement functions (these will be available via Node.js module loading)
-async function getEngagementFunctions() {
+// Initialize PostgreSQL pool for direct database access
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: false,
+});
+
+// Award points directly via database
+async function awardPoints(memberId, action, points) {
   try {
-    // Using require for Node.js environment
-    return require('../../lib/botEngineering/engagement');
+    await pool.query(
+      `INSERT INTO member_progress (member_id, total_points)
+       VALUES ($1, $2)
+       ON CONFLICT (member_id) DO UPDATE
+       SET total_points = member_progress.total_points + $2,
+           updated_at = NOW()`,
+      [memberId, points]
+    );
+
+    await pool.query(
+      `INSERT INTO member_engagement (member_id, platform, action_type, metadata)
+       VALUES ($1, $2, $3, $4)`,
+      [memberId, 'discord', action, JSON.stringify({ points_awarded: points })]
+    );
+
+    console.log(`[CHECKIN] Awarded ${points} points to ${memberId}`);
   } catch (error) {
-    console.error('[CHECKIN] Error loading engagement module:', error);
-    return null;
+    console.error('[CHECKIN] Error awarding points:', error);
   }
 }
 
@@ -53,14 +73,8 @@ module.exports = {
         if (user.bot) return;
 
         try {
-          const engagementModule = await getEngagementFunctions();
-          if (!engagementModule) {
-            console.error('[CHECKIN] Cannot load engagement module');
-            return;
-          }
-
           const memberId = user.id;
-          await engagementModule.awardPoints(memberId, 'check_in', 1);
+          await awardPoints(memberId, 'check_in', 1);
           console.log(`[CHECKIN] ${user.username} awarded +1 point`);
         } catch (error) {
           console.error('[CHECKIN] Error awarding points:', error);
