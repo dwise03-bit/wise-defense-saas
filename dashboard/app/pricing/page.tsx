@@ -1,14 +1,25 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import MembershipSelector from '@/components/MembershipSelector';
 import CheckoutButton from '@/components/CheckoutButton';
+import { TierDiscoveryModal } from '@/components/TierDiscovery/TierDiscoveryModal';
 import { Check } from 'lucide-react';
 
 export default function PricingPage() {
+  const [showTierModal, setShowTierModal] = useState(false);
+  const router = useRouter();
+
   const handleSelectTier = (tierId: string) => {
     console.log('Selected tier:', tierId);
+  };
+
+  const handleTierSelect = (tier: string) => {
+    setShowTierModal(false);
+    router.push(`/auth/signup?tier=${tier}`);
   };
 
   return (
@@ -40,6 +51,14 @@ export default function PricingPage() {
       {/* Tier Cards */}
       <section className="bg-black py-12 px-4">
         <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <button
+              onClick={() => setShowTierModal(true)}
+              className="text-neon-red hover:text-red-400 text-sm font-medium underline"
+            >
+              Not sure which tier is right for you? Take our quick quiz.
+            </button>
+          </div>
           <MembershipSelector onSelect={handleSelectTier} />
         </div>
       </section>
@@ -110,6 +129,12 @@ export default function PricingPage() {
           </Link>
         </div>
       </section>
+
+      <TierDiscoveryModal
+        isOpen={showTierModal}
+        onClose={() => setShowTierModal(false)}
+        onTierSelect={handleTierSelect}
+      />
     </main>
   );
 }
