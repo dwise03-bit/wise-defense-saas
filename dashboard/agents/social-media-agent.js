@@ -6,11 +6,10 @@
 
 const pg = require('pg');
 const axios = require('axios');
-const { Anthropic } = require('@anthropic-ai/sdk');
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Ollama configuration
+const OLLAMA_API = process.env.OLLAMA_API || 'http://localhost:11434/api/generate';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama2';
 
 // Clean HTML entities and heading markup from content
 function cleanContent(text) {
@@ -74,19 +73,17 @@ Generate posts in this JSON format (return ONLY valid JSON, no other text):
 Focus on 2nd Amendment advocacy, gun rights, and relevant legislation.`;
 
       try {
-        const message = await client.messages.create({
-          model: 'claude-opus-4-1',
-          max_tokens: 1024,
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
+        const response = await axios.post(OLLAMA_API, {
+          model: OLLAMA_MODEL,
+          prompt: prompt,
+          stream: false,
+          temperature: 0.7,
         });
 
-        const responseText = message.content[0].type === 'text' ? message.content[0].text : '{}';
-        const posts = JSON.parse(responseText);
+        const responseText = response.data.response || '{}';
+        // Extract JSON from response (Ollama may include extra text)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const posts = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
         // Insert generated posts
         for (const [platform, content] of Object.entries(posts)) {

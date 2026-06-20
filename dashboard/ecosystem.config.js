@@ -92,7 +92,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         DATABASE_URL: process.env.DATABASE_URL,
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+        OLLAMA_API: process.env.OLLAMA_API || 'http://localhost:11434/api/generate',
+        OLLAMA_MODEL: process.env.OLLAMA_MODEL || 'llama2',
         TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
         TELEGRAM_CHANNEL_ID: process.env.TELEGRAM_CHANNEL_ID,
         DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL,
