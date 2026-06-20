@@ -186,7 +186,7 @@ function detectCategory(message: string): { category: string; subcategory?: stri
   // Pricing queries
   if (lower.match(/price|cost|much|tier|membership|subscription|fee|charge|afford/)) {
     if (lower.match(/compar|vs|difference|better/)) return { category: 'pricing', subcategory: 'comparison' };
-    if (lower.match(/guarantee|money.?back|refund|return/)) return { category: 'pricing', subcategory: 'guarantee' };
+    if (lower.match(/guarantee|money.*back|refund|return/)) return { category: 'pricing', subcategory: 'guarantee' };
     return { category: 'pricing', subcategory: 'overview' };
   }
 
@@ -194,7 +194,7 @@ function detectCategory(message: string): { category: string; subcategory?: stri
   if (lower.match(/book|schedule|appointment|session|time|when|available|reserve/)) {
     if (lower.match(/reschedule|cancel|modify|change/)) return { category: 'booking', subcategory: 'cancellation' };
     if (lower.match(/how|steps|process/)) return { category: 'booking', subcategory: 'how' };
-    if (lower.match(/time|hours|hours open|when/)) return { category: 'booking', subcategory: 'availability' };
+    if (lower.match(/time|hours|open|when/)) return { category: 'booking', subcategory: 'availability' };
     return { category: 'booking', subcategory: 'how' };
   }
 
@@ -213,9 +213,9 @@ function detectCategory(message: string): { category: string; subcategory?: stri
   }
 
   // FAQ queries
-  if (lower.match(/age|old|young|kid|child|youth)) return { category: 'faq', subcategory: 'age' };
+  if (lower.match(/age|old|young|kid|child|youth/)) return { category: 'faq', subcategory: 'age' };
   if (lower.match(/gun|rifle|weapon|equipment|gear|provide/)) return { category: 'faq', subcategory: 'equipment' };
-  if (lower.match(/guarantee|refund|money.?back/)) return { category: 'faq', subcategory: 'refund' };
+  if (lower.match(/guarantee|refund|money.*back/)) return { category: 'faq', subcategory: 'refund' };
   if (lower.match(/home|online|virtual|remote|travel|distance/)) return { category: 'faq', subcategory: 'travel' };
   if (lower.match(/certified|nra|credential|background|experience/)) return { category: 'faq', subcategory: 'nra' };
 
