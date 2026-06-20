@@ -54,13 +54,19 @@ module.exports = {
         NEWS_API_KEY: process.env.NEWS_API_KEY,
       },
     },
-    // Planned agents
-    // {
-    //   name: 'content-reviewer',
-    //   script: './agents/content-reviewer.js',
-    //   instances: 1,
-    //   exec_mode: 'fork',
-    // },
+    {
+      name: 'content-reviewer',
+      script: './agents/content-reviewer.js',
+      instances: 1,
+      exec_mode: 'fork',
+      restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL,
+      },
+    },
     // {
     //   name: 'social-media-agent',
     //   script: './agents/social-media-agent.js',
