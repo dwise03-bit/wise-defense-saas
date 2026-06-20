@@ -174,6 +174,19 @@ module.exports = {
         DISCORD_APPROVAL_CHANNEL_ID: process.env.DISCORD_APPROVAL_CHANNEL_ID,
       },
     },
+    {
+      name: 'submission-api',
+      script: './agents/submission-api.js',
+      instances: 1,
+      exec_mode: 'fork',
+      restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL,
+      },
+    },
     // {
     //   name: 'telegram-bot',
     //   script: './agents/telegram-bot.js',
