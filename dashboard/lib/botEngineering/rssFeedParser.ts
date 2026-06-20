@@ -32,7 +32,7 @@ export async function parseRSSFeed(feedUrl: string, sourceName: string): Promise
     const feedText = response.data;
 
     // Extract items using regex (basic approach)
-    const itemRegex = /<item>(.*?)<\/item>/gs;
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
     const items = feedText.match(itemRegex) || [];
 
     for (const item of items.slice(0, 10)) {
