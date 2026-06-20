@@ -20,6 +20,7 @@
 const pg = require('pg');
 const checkinCommand = require('./discord-commands/checkin');
 const leaderboardCommand = require('./discord-commands/leaderboard');
+const shareHandler = require('./discord-commands/share');
 
 // Initialize PostgreSQL pool
 const pool = new pg.Pool({
@@ -310,6 +311,13 @@ async function main() {
   // - Listen for interactionCreate events
   // - Route to leaderboardCommand.execute()
   console.log('[DISCORD] Leaderboard command ready (registration via Discord.js client on VPS)');
+
+  // Note: Reaction handlers require Discord.js client messageReactionAdd listener
+  // This happens on VPS when bot token is available:
+  // - Listen for messageReactionAdd events
+  // - Route emoji reactions to shareHandler.handleShareReaction()
+  // - Award points for social shares
+  console.log('[DISCORD] Social share handler ready (reaction listener via Discord.js client on VPS)');
 
   scheduleJobs();
 }
