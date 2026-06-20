@@ -22,7 +22,7 @@ export async function getActiveSources(): Promise<NewsSource[]> {
     const result = await query(
       `SELECT * FROM news_scraper_config WHERE is_active = true ORDER BY priority_order ASC`
     );
-    return result.rows;
+    return result.rows as NewsSource[];
   } catch (error) {
     console.error('[NEWS_MANAGER] Error fetching sources:', error);
     return [];
