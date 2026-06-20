@@ -149,16 +149,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    // Get or create conversation
+    // Get or create conversation (optional - for logging)
     let convId = conversationId;
     if (!convId) {
-      const convResult = await query(
-        `INSERT INTO conversations (user_id, channel, status, created_at)
-         VALUES ($1, $2, $3, NOW())
-         RETURNING id`,
-        [userId, channel, 'active']
-      );
-      convId = convResult.rows[0].id;
+      try {
+        const convResult = await query(
+          `INSERT INTO conversations (user_id, channel, status, created_at)
+           VALUES ($1, $2, $3, NOW())
+           RETURNING id`,
+          [userId, channel, 'active']
+        );
+        convId = convResult.rows[0].id;
+      } catch (dbError) {
+        // Database not available - generate local ID
+        convId = Date.now().toString();
+      }
     }
 
     let assistantMessage = '';
@@ -191,18 +196,23 @@ They'll help you right away!`;
       }
     }
 
-    // Save messages
-    await query(
-      `INSERT INTO conversation_messages (conversation_id, role, message, created_at)
-       VALUES ($1, $2, $3, NOW())`,
-      [convId, 'user', message]
-    );
+    // Save messages (optional - for logging)
+    try {
+      await query(
+        `INSERT INTO conversation_messages (conversation_id, sender, content, created_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [convId, 'user', message]
+      );
 
-    await query(
-      `INSERT INTO conversation_messages (conversation_id, role, message, created_at)
-       VALUES ($1, $2, $3, NOW())`,
-      [convId, 'assistant', assistantMessage]
-    );
+      await query(
+        `INSERT INTO conversation_messages (conversation_id, sender, content, created_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [convId, 'assistant', assistantMessage]
+      );
+    } catch (dbError) {
+      // Database not available - continue without logging
+      console.log('[CHAT] Database logging skipped:', dbError instanceof Error ? dbError.message : 'Unknown error');
+    }
 
     // Check if escalation needed
     const needsEscalation = message.toLowerCase().includes('escalate') ||
