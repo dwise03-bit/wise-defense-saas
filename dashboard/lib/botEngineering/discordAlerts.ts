@@ -48,7 +48,7 @@ export async function sendDiscordAlert(
     }
 
     // Build embed
-    const embed = {
+    const embed: any = {
       title: `${emoji} ${title}`,
       description: content.substring(0, 300),
       url,
