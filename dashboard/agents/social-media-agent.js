@@ -7,6 +7,21 @@
 const pg = require('pg');
 const axios = require('axios');
 
+// Clean HTML entities and heading markup from content
+function cleanContent(text) {
+  if (!text) return '';
+  return text
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/<h[1-6][^>]*>/gi, '')
+    .replace(/<\/h[1-6]>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+}
+
 // Initialize database pool
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://localhost/wisedefense',
@@ -72,7 +87,8 @@ async function postToTelegram(post) {
   }
 
   try {
-    const message = `${post.content_text}\n\n${post.hashtags}`;
+    const cleanedContent = cleanContent(post.content_text);
+    const message = `${cleanedContent}\n\n${post.hashtags}`;
     const response = await axios.post(
       `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
       {
