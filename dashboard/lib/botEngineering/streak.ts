@@ -3,7 +3,7 @@
  * Tracks member streaks (current & longest)
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 /**
  * Update member streak (call when member is active)
@@ -15,7 +15,7 @@ export async function updateStreak(
     const today = new Date().toISOString().split('T')[0];
 
     // Get current progress
-    const result = await pool.query(
+    const result = await query(
       `SELECT streak_current, streak_longest, last_active_date
        FROM member_progress WHERE member_id = $1`,
       [memberId]
@@ -25,7 +25,7 @@ export async function updateStreak(
 
     if (!current) {
       // New member
-      await pool.query(
+      await query(
         `INSERT INTO member_progress (member_id, streak_current, streak_longest, last_active_date)
          VALUES ($1, 1, 1, $2)`,
         [memberId, today]
@@ -50,7 +50,7 @@ export async function updateStreak(
 
     const newLongest = Math.max(newStreak, current.streak_longest);
 
-    await pool.query(
+    await query(
       `UPDATE member_progress
        SET streak_current = $1, streak_longest = $2, last_active_date = $3, updated_at = NOW()
        WHERE member_id = $4`,
@@ -71,7 +71,7 @@ export async function getStreak(
   memberId: string
 ): Promise<{ current: number; longest: number }> {
   try {
-    const result = await pool.query(
+    const result = await query(
       'SELECT streak_current, streak_longest FROM member_progress WHERE member_id = $1',
       [memberId]
     );

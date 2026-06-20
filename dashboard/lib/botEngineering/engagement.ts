@@ -3,7 +3,7 @@
  * Tracks member engagement, awards points, and records interactions
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 /**
  * Award points to a member
@@ -15,7 +15,7 @@ export async function awardPoints(
 ): Promise<void> {
   try {
     // Update or insert member_progress
-    await pool.query(
+    await query(
       `INSERT INTO member_progress (member_id, total_points)
        VALUES ($1, $2)
        ON CONFLICT (member_id) DO UPDATE
@@ -37,7 +37,7 @@ export async function awardPoints(
  */
 export async function getMemberPoints(memberId: string): Promise<number> {
   try {
-    const result = await pool.query(
+    const result = await query(
       'SELECT total_points FROM member_progress WHERE member_id = $1',
       [memberId]
     );
@@ -58,7 +58,7 @@ export async function recordEngagement(
   metadata?: any
 ): Promise<void> {
   try {
-    await pool.query(
+    await query(
       `INSERT INTO member_engagement (member_id, platform, action_type, metadata)
        VALUES ($1, $2, $3, $4)`,
       [memberId, platform, actionType, metadata ? JSON.stringify(metadata) : null]

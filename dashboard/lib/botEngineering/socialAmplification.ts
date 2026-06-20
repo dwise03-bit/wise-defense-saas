@@ -3,14 +3,14 @@
  * Manages viral content reposting to Twitter, Instagram, LinkedIn
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 /**
  * Get queued posts for social media
  */
 export async function getQueuedPosts(limit = 10) {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT * FROM bot_social_posts WHERE social_platform = 'queued' LIMIT $1`,
       [limit]
     );
@@ -30,7 +30,7 @@ export async function markPostPosted(
   postUrl: string
 ): Promise<void> {
   try {
-    await pool.query(
+    await query(
       `UPDATE bot_social_posts SET social_platform = $1, post_url = $2, posted_at = NOW()
        WHERE id = $3`,
       [platform, postUrl, postId]
@@ -47,7 +47,7 @@ export async function markPostPosted(
  */
 export async function awardViralBonus(memberId: string): Promise<void> {
   try {
-    await pool.query(
+    await query(
       `INSERT INTO member_progress (member_id, total_points)
        VALUES ($1, 5)
        ON CONFLICT (member_id) DO UPDATE
@@ -57,7 +57,7 @@ export async function awardViralBonus(memberId: string): Promise<void> {
     );
 
     // Record engagement
-    await pool.query(
+    await query(
       `INSERT INTO member_engagement (member_id, platform, action_type, metadata)
        VALUES ($1, 'social', 'viral_content', $2)`,
       [memberId, JSON.stringify({ bonus_points: 5 })]
@@ -84,7 +84,7 @@ export function generateCaption(post: any): string {
  */
 export async function getTopViralPosts(limit = 5) {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT * FROM bot_social_posts
        WHERE engagement_count >= 5 AND social_platform = 'discord'
        ORDER BY engagement_count DESC
