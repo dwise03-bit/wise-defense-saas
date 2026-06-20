@@ -34,7 +34,7 @@ services:
 
   dashboard:
     build:
-      context: ./dashboard-v2
+      context: ./dashboard
     container_name: wise-dashboard-v2
     env_file:
       - .env
