@@ -138,8 +138,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Allow unauthenticated access with guest user ID
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      userId = 'guest';
     }
 
     const { message, conversationId, channel = 'web' } = await request.json();
