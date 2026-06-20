@@ -8,6 +8,18 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 
+// Load .env file if it exists
+const dotenvPath = path.join(__dirname, '../../.env');
+if (fs.existsSync(dotenvPath)) {
+  const envFile = fs.readFileSync(dotenvPath, 'utf-8');
+  envFile.split('\n').forEach(line => {
+    const [key, ...valueParts] = line.split('=');
+    if (key && !process.env[key]) {
+      process.env[key] = valueParts.join('=');
+    }
+  });
+}
+
 // Parse DATABASE_URL from environment or use default
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wise_defense?sslmode=disable';
 
