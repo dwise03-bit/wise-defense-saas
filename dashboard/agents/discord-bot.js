@@ -19,6 +19,7 @@
 
 const pg = require('pg');
 const checkinCommand = require('./discord-commands/checkin');
+const leaderboardCommand = require('./discord-commands/leaderboard');
 
 // Initialize PostgreSQL pool
 const pool = new pg.Pool({
@@ -136,6 +137,25 @@ async function taskPostTrainingTips() {
     console.log('[DISCORD] Training tips posted');
   } catch (error) {
     console.error('[DISCORD] Error in training tips task:', error.message);
+  }
+}
+
+/**
+ * Get leaderboard data
+ */
+async function getLeaderboardData() {
+  console.log('[DISCORD] Fetching leaderboard data...');
+  try {
+    const result = await query(
+      `SELECT member_id, total_points, streak_current
+       FROM member_progress
+       ORDER BY total_points DESC
+       LIMIT 10`
+    );
+    return result.rows;
+  } catch (error) {
+    console.error('[DISCORD] Error fetching leaderboard:', error.message);
+    return [];
   }
 }
 
@@ -283,6 +303,13 @@ async function main() {
   if (!process.env.DISCORD_TOKEN) {
     console.warn('[DISCORD] Discord token not configured - bot will log messages but not send them');
   }
+
+  // Note: Slash command registration requires Discord.js client
+  // This happens on VPS when bot token is available:
+  // - Register /leaderboard command with Discord API
+  // - Listen for interactionCreate events
+  // - Route to leaderboardCommand.execute()
+  console.log('[DISCORD] Leaderboard command ready (registration via Discord.js client on VPS)');
 
   scheduleJobs();
 }
