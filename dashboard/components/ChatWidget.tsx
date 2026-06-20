@@ -35,7 +35,7 @@ export default function ChatWidget() {
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!input.trim() || !token) return;
+    if (!input.trim()) return;
 
     const userMessage = input;
     setInput('');
@@ -49,7 +49,7 @@ export default function ChatWidget() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           message: userMessage,
