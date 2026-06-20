@@ -9,6 +9,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PRIVATE_STANDALONE=true
+ENV DATABASE_URL=postgresql://dummy:dummy@localhost/dummy
+ENV STRIPE_SECRET_KEY=sk_test_dummy
+ENV STRIPE_WEBHOOK_SECRET=whsec_dummy
+ENV JWT_SECRET=dummy_secret_key_for_build
 RUN npm run build
 
 FROM node:20-alpine AS runner
