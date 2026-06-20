@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { verifyToken } from '@/lib/auth';
 import { getUserById } from '@/lib/db';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {});
 
 // Pricing mapping
 const TIER_PRICING: Record<string, number> = {
