@@ -125,6 +125,21 @@ module.exports = {
         DISCORD_BREAKING_NEWS_ROLE_ID: process.env.DISCORD_BREAKING_NEWS_ROLE_ID,
       },
     },
+    {
+      name: 'discord-approval-workflow',
+      script: './agents/discord-approval-workflow.js',
+      instances: 1,
+      exec_mode: 'fork',
+      restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL,
+        DISCORD_NEWS_WEBHOOK_URL: process.env.DISCORD_NEWS_WEBHOOK_URL,
+        DISCORD_APPROVAL_CHANNEL_ID: process.env.DISCORD_APPROVAL_CHANNEL_ID,
+      },
+    },
     // {
     //   name: 'telegram-bot',
     //   script: './agents/telegram-bot.js',
