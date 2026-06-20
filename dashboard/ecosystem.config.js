@@ -158,6 +158,22 @@ module.exports = {
         TTS_SERVICE: process.env.TTS_SERVICE || 'google',
       },
     },
+    {
+      name: 'discord-content-bot',
+      script: './agents/discord-content-bot.js',
+      instances: 1,
+      exec_mode: 'fork',
+      restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL,
+        DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
+        DISCORD_GUILD_ID: process.env.DISCORD_GUILD_ID,
+        DISCORD_APPROVAL_CHANNEL_ID: process.env.DISCORD_APPROVAL_CHANNEL_ID,
+      },
+    },
     // {
     //   name: 'telegram-bot',
     //   script: './agents/telegram-bot.js',
