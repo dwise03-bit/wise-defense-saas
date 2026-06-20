@@ -73,12 +73,7 @@ export default function BotControlPanel() {
       const data = await response.json();
 
       if (data.success) {
-        if (action === 'status') {
-          setBots(data.bots);
-          setSummary(data.summary);
-        } else {
-          await fetchBotStatus(token);
-        }
+        await fetchBotStatus(token);
       }
     } catch (error) {
       console.error(`Failed to ${action} bot:`, error);
