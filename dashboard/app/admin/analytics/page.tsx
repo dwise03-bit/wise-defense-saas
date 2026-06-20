@@ -84,8 +84,8 @@ export default function AdvancedAnalyticsPage() {
           <div className="bg-gray-900 p-6 rounded-lg border border-red-600 border-opacity-30">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">💬 Engagement Trend {engagementTrend?.data && getTrendDirection(engagementTrend.data)}</h2>
-              {engagementTrend && (
-                <span className="text-2xl font-bold text-red-500">{engagementTrend.total}</span>
+              {engagementTrend?.data && (
+                <span className="text-2xl font-bold text-red-500">{engagementTrend.data.length} periods</span>
               )}
             </div>
             <div className="overflow-x-auto">
