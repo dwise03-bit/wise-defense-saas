@@ -18,6 +18,7 @@
  */
 
 const pg = require('pg');
+const checkinCommand = require('./discord-commands/checkin');
 
 // Initialize PostgreSQL pool
 const pool = new pg.Pool({
@@ -139,6 +140,23 @@ async function taskPostTrainingTips() {
 }
 
 /**
+ * Task 2.5: Daily check-in poll
+ * Runs every day at 8:00 AM UTC
+ */
+async function taskDailyCheckIn() {
+  console.log('[DISCORD] Running task: Daily check-in poll...');
+  try {
+    if (!checkinCommand) {
+      console.error('[DISCORD] Check-in command not loaded');
+      return;
+    }
+    await checkinCommand.execute(null, process.env.DISCORD_CHANNEL_TIPS);
+  } catch (error) {
+    console.error('[DISCORD] Error in daily check-in task:', error.message);
+  }
+}
+
+/**
  * Task 3: Post community announcements
  * Runs every Friday at 2:00 PM
  */
@@ -175,7 +193,25 @@ function scheduleJobs() {
     console.log('[DISCORD] Session reminders scheduled (every 60 minutes)');
   }
 
-  // Task 2: Training tips every Monday at 8am
+  // Task 2: Daily check-in poll at 8am UTC
+  function scheduleCheckIn() {
+    const now = new Date();
+    const nextCheckIn = new Date();
+    nextCheckIn.setUTCHours(8, 0, 0, 0);
+
+    if (nextCheckIn <= now) {
+      nextCheckIn.setDate(nextCheckIn.getDate() + 1);
+    }
+
+    const delayMs = nextCheckIn.getTime() - now.getTime();
+    setTimeout(() => {
+      taskDailyCheckIn();
+      setInterval(taskDailyCheckIn, 24 * 60 * 60 * 1000);
+    }, delayMs);
+    console.log(`[DISCORD] Check-in scheduled for ${Math.round(delayMs / 1000)}ms`);
+  }
+
+  // Task 2.5: Training tips every Monday at 8am
   function scheduleTips() {
     const now = new Date();
     const nextMonday = new Date(now);
@@ -207,6 +243,7 @@ function scheduleJobs() {
   }
 
   scheduleReminders();
+  scheduleCheckIn();
   scheduleTips();
   scheduleAnnouncements();
 }
