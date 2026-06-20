@@ -1,33 +1,130 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { Anthropic } from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
+// Hybrid approach: Cache + Ollama (completely free)
 
-const SYSTEM_PROMPT = `You are an expert customer service representative for Wise Defense, a premium firearms training academy.
+/**
+ * Cached answers for instant response
+ * These are pre-written by support team
+ */
+const ANSWER_CACHE: Record<string, string> = {
+  pricing: `Wise Defense offers 3 membership tiers:
 
-About Wise Defense:
-- NRA Certified instructor with 10+ years experience
-- Premium firearms training: Beginner Fundamentals, Concealed Carry, Competitive Shooting
-- Three membership tiers: Starter ($99/mo), Pro ($199/mo), VIP ($399/mo)
-- Features: Online booking, certificates, leaderboards, achievements, community forum
-- Personalized one-on-one coaching available
+**Starter - $99/month**
+✅ Beginner Fundamentals course
+✅ Community forum access
+✅ Performance tracking
+✅ Certificate upon completion
 
-Your role:
-✅ Answer questions about courses, pricing, memberships
-✅ Help with booking sessions and account management
-✅ Provide training tips and best practices
-✅ Explain features like achievements and certificates
-✅ Handle refunds and cancellations
-❌ For complex issues or payment problems, escalate to human agent
+**Pro - $199/month**
+✅ Everything in Starter, PLUS:
+✅ Concealed Carry course
+✅ Personalized coaching
+✅ Priority support
 
-Guidelines:
-- Be professional, friendly, and personalized
-- Keep responses concise but helpful
-- If unsure, say "I'll connect you with our support team"
-- For urgent issues, immediately offer escalation
-- Always provide next steps`;
+**VIP - $399/month**
+✅ Everything in Pro, PLUS:
+✅ Competitive Shooting course
+✅ 1-on-1 coaching sessions
+✅ Priority phone support
+✅ Custom training programs`,
+
+  booking: `**How to Book a Session:**
+1. Sign in to your dashboard
+2. Go to "Booking"
+3. Select your date and time
+4. Choose session type (Beginner/Intermediate/Advanced)
+5. Click "Confirm Booking"
+6. Receive confirmation email
+
+Free reschedule up to 24 hours before!`,
+
+  cancellation: `**Cancellation Policy:**
+- Cancel anytime with 7 days notice
+- No refund for partial months
+- Retain access through end of billing cycle
+- No long-term contracts
+
+Contact support@wisedefense.com for special circumstances.`,
+
+  achievements: `**Earn Achievements:**
+🏆 First Shot (10 pts) - Complete first drill
+🎯 Perfect Accuracy (50 pts) - 100% score
+⚡ Speedster (30 pts) - 10 drills
+💪 Dedicated (100 pts) - 50 drills
+🔥 Week Warrior (75 pts) - 7-day streak
+🌟 Unstoppable (200 pts) - 30-day streak
+📢 Influencer (25 pts) - Social share
+🤝 Recruiter (150 pts) - Refer 5 friends
+
+Compete on real-time leaderboards!`,
+
+  courses: `**Available Courses:**
+• Beginner Fundamentals (4-6 weeks)
+• Concealed Carry (6-8 weeks)
+• Competitive Shooting (8-12 weeks)
+
+All taught by NRA Certified instructor.
+Custom programs available for VIP members.`,
+
+  support: `**Getting Help:**
+🤖 This AI Chat (24/7)
+📧 support@wisedefense.com (2-hour response)
+💬 Discord server (community)
+📱 Telegram (quick messages)
+☎️ 1-800-WISE-DEF (urgent)
+
+Which would you prefer?`
+};
+
+/**
+ * Detect if question is in cache
+ */
+function detectCategory(message: string): string | null {
+  const lower = message.toLowerCase();
+
+  if (lower.match(/how much|price|cost|tier|membership|fee/)) return 'pricing';
+  if (lower.match(/book|session|schedule|when|time|appointment/)) return 'booking';
+  if (lower.match(/cancel|refund|stop|unsubscribe/)) return 'cancellation';
+  if (lower.match(/achievement|badge|points|leaderboard|rank/)) return 'achievements';
+  if (lower.match(/course|training|beginner|concealed|competitive/)) return 'courses';
+  if (lower.match(/help|contact|support|email|phone|discord/)) return 'support';
+
+  return null;
+}
+
+/**
+ * Call Ollama for complex questions
+ */
+async function callOllama(userMessage: string): Promise<string | null> {
+  try {
+    const response = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: process.env.OLLAMA_MODEL || 'mistral',
+        prompt: `You are a helpful customer service representative for Wise Defense, a firearms training academy.
+
+Answer this customer question briefly and helpfully:
+${userMessage}`,
+        stream: false,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      console.error('Ollama error:', response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.response || null;
+  } catch (error) {
+    console.error('Ollama call failed:', error);
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,49 +160,35 @@ export async function POST(request: NextRequest) {
       convId = convResult.rows[0].id;
     }
 
-    // Get conversation history
-    const historyResult = await query(
-      `SELECT message, role FROM conversation_messages
-       WHERE conversation_id = $1
-       ORDER BY created_at ASC
-       LIMIT 20`,
-      [convId]
-    );
+    let assistantMessage = '';
+    let source = 'cache';
 
-    const history = historyResult.rows.map((row: any) => ({
-      role: row.role as 'user' | 'assistant',
-      content: row.message
-    }));
+    // STEP 1: Check cache for instant response
+    const category = detectCategory(message);
+    if (category && ANSWER_CACHE[category]) {
+      console.log(`[CHAT] Cache hit: ${category}`);
+      assistantMessage = ANSWER_CACHE[category];
+      source = 'cache';
+    } else {
+      // STEP 2: Try Ollama for complex questions
+      console.log('[CHAT] Cache miss - trying Ollama');
+      const ollamaResponse = await callOllama(message);
 
-    // Get user context
-    const userResult = await query(
-      `SELECT u.first_name, m.tier FROM users u
-       LEFT JOIN memberships m ON u.id = m.user_id
-       WHERE u.id = $1`,
-      [userId]
-    );
+      if (ollamaResponse) {
+        assistantMessage = ollamaResponse;
+        source = 'ollama';
+      } else {
+        // STEP 3: Fallback response
+        assistantMessage = `I'm not sure about that. Let me connect you with our support team:
 
-    let userContext = '';
-    if (userResult.rows.length > 0) {
-      const user = userResult.rows[0];
-      userContext = `\n\nCustomer: ${user.first_name || 'there'} | Tier: ${user.tier || 'free'}`;
+📧 support@wisedefense.com
+📱 Telegram: @WiseDefenseBot
+☎️ 1-800-WISE-DEF
+
+They'll help you right away!`;
+        source = 'fallback';
+      }
     }
-
-    // Build messages for Claude
-    const messages = [
-      ...history,
-      { role: 'user' as const, content: message }
-    ];
-
-    // Call Claude API
-    const response = await client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT + userContext,
-      messages: messages
-    });
-
-    const assistantMessage = response.content[0].type === 'text' ? response.content[0].text : '';
 
     // Save messages
     await query(
@@ -121,19 +204,17 @@ export async function POST(request: NextRequest) {
     );
 
     // Check if escalation needed
-    const needsEscalation = assistantMessage.toLowerCase().includes('human agent') ||
-                           assistantMessage.toLowerCase().includes('support team') ||
-                           message.toLowerCase().includes('escalate');
+    const needsEscalation = message.toLowerCase().includes('escalate') ||
+                           message.toLowerCase().includes('human') ||
+                           message.toLowerCase().includes('agent');
 
     if (needsEscalation) {
-      // Create support ticket
       await query(
         `INSERT INTO support_tickets (conversation_id, user_id, status, priority, created_at)
          VALUES ($1, $2, $3, $4, NOW())`,
         [convId, userId, 'open', 'medium']
       );
 
-      // Update conversation status
       await query(
         `UPDATE conversations SET status = $1 WHERE id = $2`,
         ['escalated', convId]
@@ -144,7 +225,8 @@ export async function POST(request: NextRequest) {
       success: true,
       conversationId: convId,
       message: assistantMessage,
-      escalated: needsEscalation
+      escalated: needsEscalation,
+      source: source
     }, { status: 200 });
   } catch (error) {
     console.error('Chat API error:', error);
