@@ -1,10 +1,21 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import SocialProof from '@/components/SocialProof';
+import { TierDiscoveryModal } from '@/components/TierDiscovery/TierDiscoveryModal';
 
 export default function Home() {
+  const [showTierModal, setShowTierModal] = useState(false);
+  const router = useRouter();
+
+  const handleTierSelect = (tier: string) => {
+    setShowTierModal(false);
+    router.push(`/auth/signup?tier=${tier}`);
+  };
+
   return (
     <main className="bg-black min-h-screen">
       {/* Header */}
@@ -42,9 +53,12 @@ export default function Home() {
             <Link href="/auth/signup">
               <button className="btn-primary">Start Training</button>
             </Link>
-            <Link href="/pricing">
-              <button className="btn-secondary">View Plans</button>
-            </Link>
+            <button
+              onClick={() => setShowTierModal(true)}
+              className="btn-secondary"
+            >
+              Find Your Tier
+            </button>
           </div>
         </div>
       </section>
@@ -134,6 +148,12 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      <TierDiscoveryModal
+        isOpen={showTierModal}
+        onClose={() => setShowTierModal(false)}
+        onTierSelect={handleTierSelect}
+      />
     </main>
   );
 }
