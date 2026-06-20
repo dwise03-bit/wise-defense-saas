@@ -80,10 +80,10 @@ CREATE TABLE IF NOT EXISTS member_engagement (
   action_type VARCHAR(100) NOT NULL,
   points_awarded INT DEFAULT 0,
   metadata JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  INDEX idx_member_action (member_id, action_type),
-  INDEX idx_created (created_at)
+  created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_member_engagement_member_action ON member_engagement(member_id, action_type);
+CREATE INDEX IF NOT EXISTS idx_member_engagement_created ON member_engagement(created_at);
 
 -- Member progress tracking
 CREATE TABLE IF NOT EXISTS member_progress (
@@ -95,10 +95,10 @@ CREATE TABLE IF NOT EXISTS member_progress (
   last_active_date DATE,
   total_points INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW(),
-  INDEX idx_streak (streak_current),
-  INDEX idx_points (total_points)
+  updated_at TIMESTAMP DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_member_progress_streak ON member_progress(streak_current);
+CREATE INDEX IF NOT EXISTS idx_member_progress_points ON member_progress(total_points);
 
 -- Social media posts tracking
 CREATE TABLE IF NOT EXISTS bot_social_posts (
@@ -110,10 +110,10 @@ CREATE TABLE IF NOT EXISTS bot_social_posts (
   engagement_count INT DEFAULT 0,
   member_id UUID REFERENCES users(id) ON DELETE SET NULL,
   posted_at TIMESTAMP DEFAULT NOW(),
-  caption TEXT,
-  INDEX idx_member (member_id),
-  INDEX idx_platform (social_platform)
+  caption TEXT
 );
+CREATE INDEX IF NOT EXISTS idx_bot_social_posts_member ON bot_social_posts(member_id);
+CREATE INDEX IF NOT EXISTS idx_bot_social_posts_platform ON bot_social_posts(social_platform);
 
 -- Daily analytics snapshot
 CREATE TABLE IF NOT EXISTS bot_analytics_daily (
@@ -123,9 +123,9 @@ CREATE TABLE IF NOT EXISTS bot_analytics_daily (
   engagement_rate DECIMAL(5,2),
   top_post_id VARCHAR(100),
   tier_breakdown JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  INDEX idx_day (day)
+  created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_bot_analytics_daily_day ON bot_analytics_daily(day);
 
 -- Scheduled posts
 CREATE TABLE IF NOT EXISTS bot_scheduled_posts (
@@ -136,10 +136,10 @@ CREATE TABLE IF NOT EXISTS bot_scheduled_posts (
   posted_time TIMESTAMP,
   status VARCHAR(50) DEFAULT 'pending',
   created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  INDEX idx_scheduled_time (scheduled_time),
-  INDEX idx_status (status)
+  created_at TIMESTAMP DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_bot_scheduled_posts_scheduled_time ON bot_scheduled_posts(scheduled_time);
+CREATE INDEX IF NOT EXISTS idx_bot_scheduled_posts_status ON bot_scheduled_posts(status);
 ```
 
 - [ ] **Step 2: Apply migration to VPS database**
