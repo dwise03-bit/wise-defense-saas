@@ -14,6 +14,20 @@
  * - discord-bot: Discord server integration and commands
  */
 
+// Load .env file before configuring apps
+const fs = require('fs');
+const path = require('path');
+const dotenvPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(dotenvPath)) {
+  const envFile = fs.readFileSync(dotenvPath, 'utf-8');
+  envFile.split('\n').forEach(line => {
+    const [key, ...valueParts] = line.split('=');
+    if (key && key.trim() && !process.env[key.trim()]) {
+      process.env[key.trim()] = valueParts.join('=').trim();
+    }
+  });
+}
+
 module.exports = {
   apps: [
     {
