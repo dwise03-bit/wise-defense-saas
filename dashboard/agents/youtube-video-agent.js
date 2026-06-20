@@ -126,7 +126,7 @@ async function generateVideo(script, article, videoId) {
 async function getApprovedArticlesForVideo() {
   try {
     const result = await pool.query(
-      `SELECT DISTINCT a.id, a.title, a.content, a.source_name, a.source_url
+      `SELECT a.id, a.title, a.content, a.source_name, a.source_url, a.created_at
        FROM news_articles a
        JOIN content_reviews cr ON a.id = cr.article_id
        WHERE cr.recommended_for_social = true
