@@ -3,7 +3,7 @@
  * Tracks message reactions and auto-queues viral content
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 const VIRAL_THRESHOLD = 5;
 
@@ -17,21 +17,21 @@ export async function trackVirality(
 ): Promise<boolean> {
   try {
     // Check if message already tracked
-    const existing = await pool.query(
+    const existing = await query(
       `SELECT engagement_count FROM bot_social_posts WHERE discord_message_id = $1`,
       [messageId]
     );
 
     if (existing.rows.length === 0) {
       // New message
-      await pool.query(
+      await query(
         `INSERT INTO bot_social_posts (discord_message_id, member_id, engagement_count, social_platform)
          VALUES ($1, $2, $3, 'discord')`,
         [messageId, memberId, reactionCount]
       );
     } else {
       // Update existing
-      await pool.query(
+      await query(
         `UPDATE bot_social_posts SET engagement_count = $1 WHERE discord_message_id = $2`,
         [reactionCount, messageId]
       );
@@ -55,7 +55,7 @@ export async function trackVirality(
  */
 export async function isViral(messageId: string): Promise<boolean> {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT engagement_count FROM bot_social_posts WHERE discord_message_id = $1`,
       [messageId]
     );
@@ -73,7 +73,7 @@ export async function isViral(messageId: string): Promise<boolean> {
  */
 export async function getViralPosts(limit = 10): Promise<any[]> {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT * FROM bot_social_posts
        WHERE engagement_count >= $1 AND social_platform = 'discord'
        ORDER BY engagement_count DESC

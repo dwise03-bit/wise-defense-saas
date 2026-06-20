@@ -3,7 +3,7 @@
  * Generates personalized tips based on member skill level
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 // Template-based tips (fallback when Hermes AI not available)
 const TIPS_BY_LEVEL: Record<string, string[]> = {
@@ -35,8 +35,7 @@ const TIPS_BY_LEVEL: Record<string, string[]> = {
  */
 export async function generatePersonalizedTip(memberId: string): Promise<string> {
   try {
-    // Get member skill level
-    const result = await pool.query(
+    const result = await query(
       `SELECT experience_level FROM users WHERE id = $1`,
       [memberId]
     );
@@ -71,8 +70,8 @@ export async function generateTipsForAllMembers(): Promise<Map<string, string>> 
   const tips = new Map<string, string>();
 
   try {
-    const result = await pool.query(
-      `SELECT id, experience_level FROM users WHERE is_active = true AND telegram_chat_id IS NOT NULL`
+    const result = await query(
+      `SELECT id, experience_level FROM users WHERE is_active = true`
     );
 
     for (const user of result.rows) {
