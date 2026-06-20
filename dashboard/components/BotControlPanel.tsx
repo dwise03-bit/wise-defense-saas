@@ -160,7 +160,7 @@ export default function BotControlPanel() {
           <Power size={16} /> Stop All
         </button>
         <button
-          onClick={() => handleBotAction('status')}
+          onClick={() => fetchBotStatus(token)}
           disabled={actionLoading !== null}
           className="btn-secondary flex items-center gap-2"
         >
