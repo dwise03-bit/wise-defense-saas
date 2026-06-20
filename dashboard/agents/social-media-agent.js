@@ -6,6 +6,11 @@
 
 const pg = require('pg');
 const axios = require('axios');
+const { Anthropic } = require('@anthropic-ai/sdk');
+
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
 // Clean HTML entities and heading markup from content
 function cleanContent(text) {
@@ -20,6 +25,94 @@ function cleanContent(text) {
     .replace(/<\/h[1-6]>/gi, '')
     .replace(/<[^>]+>/g, '')
     .trim();
+}
+
+/**
+ * Generate social media posts from reviewed articles using Claude
+ */
+async function generatePostsFromArticles() {
+  try {
+    // Find reviewed articles that don't have posts yet
+    const result = await pool.query(`
+      SELECT
+        a.id, a.title, a.content, a.source_url,
+        cr.relevance_score, cr.sentiment
+      FROM content_reviews cr
+      JOIN news_articles a ON cr.article_id = a.id
+      WHERE cr.recommended_for_social = true
+      AND a.id NOT IN (SELECT DISTINCT article_id FROM social_posts_generated)
+      AND cr.relevance_score > 0.7
+      ORDER BY cr.relevance_score DESC
+      LIMIT 3
+    `);
+
+    const articles = result.rows;
+    if (articles.length === 0) {
+      console.log('[SOCIAL] No new articles to generate posts from');
+      return 0;
+    }
+
+    console.log(`[SOCIAL] Generating posts for ${articles.length} articles...`);
+    let postsCreated = 0;
+
+    for (const article of articles) {
+      const prompt = `You are a 2nd Amendment news social media expert. Create concise, engaging social media posts for the following article:
+
+Title: ${article.title}
+Source: ${article.source_url}
+Summary: ${cleanContent(article.content).substring(0, 300)}...
+
+Generate posts in this JSON format (return ONLY valid JSON, no other text):
+{
+  "telegram": "A focused, fact-based post for Telegram (150-250 chars) with relevant #hashtags",
+  "twitter": "An engaging tweet (under 280 chars) with #hashtags and emoji",
+  "instagram": "An engaging Instagram caption (150-250 chars) with call-to-action",
+  "linkedin": "A professional LinkedIn post (100-150 chars) for advocacy",
+  "discord": "A Discord announcement post (200 chars) with context"
+}
+
+Focus on 2nd Amendment advocacy, gun rights, and relevant legislation.`;
+
+      try {
+        const message = await client.messages.create({
+          model: 'claude-opus-4-1',
+          max_tokens: 1024,
+          messages: [
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+        });
+
+        const responseText = message.content[0].type === 'text' ? message.content[0].text : '{}';
+        const posts = JSON.parse(responseText);
+
+        // Insert generated posts
+        for (const [platform, content] of Object.entries(posts)) {
+          if (content && platform !== 'twitter') {
+            // Skip twitter for now (need API credentials)
+            await pool.query(
+              `INSERT INTO social_posts_generated (article_id, platform, content_text, hashtags, status)
+               VALUES ($1, $2, $3, $4, 'pending')
+               ON CONFLICT DO NOTHING`,
+              [article.id, platform, content, '#2A #GunRights #2ndAmendment']
+            );
+            postsCreated++;
+          }
+        }
+
+        console.log(`[SOCIAL] Generated posts for article: ${article.title.substring(0, 50)}`);
+      } catch (error) {
+        console.error('[SOCIAL] Error generating posts:', error.message);
+      }
+    }
+
+    return postsCreated;
+  } catch (error) {
+    console.error('[SOCIAL] Error in post generation:', error);
+    return 0;
+  }
 }
 
 // Initialize database pool
@@ -197,6 +290,12 @@ async function runPostingCycle() {
     console.log('[SOCIAL] ========================================');
     console.log('[SOCIAL] Starting social media posting cycle');
     console.log('[SOCIAL] ========================================');
+
+    // Generate posts from reviewed articles first
+    const postsGenerated = await generatePostsFromArticles();
+    if (postsGenerated > 0) {
+      console.log(`[SOCIAL] Generated ${postsGenerated} new posts from articles`);
+    }
 
     const platforms = ['twitter', 'instagram', 'linkedin', 'telegram', 'discord'];
 
