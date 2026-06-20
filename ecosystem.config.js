@@ -84,7 +84,7 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/wise_defense?sslmode=disable',
+        DATABASE_URL: 'postgresql://postgres:SuperSecurePassword123@localhost:5432/wisedefense?sslmode=disable',
         DISCORD_TOKEN: process.env.DISCORD_TOKEN || '',
         DISCORD_CHANNEL_ANNOUNCEMENTS: process.env.DISCORD_CHANNEL_ANNOUNCEMENTS || '',
         DISCORD_CHANNEL_TIPS: process.env.DISCORD_CHANNEL_TIPS || '',
