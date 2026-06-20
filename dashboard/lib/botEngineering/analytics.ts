@@ -2,11 +2,11 @@
  * Bot Analytics Aggregation
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function getDailyActiveUsers(days = 7) {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT DATE(created_at) as day, COUNT(DISTINCT member_id) as count
        FROM member_engagement
        WHERE created_at > NOW() - INTERVAL '${days} days'
@@ -22,9 +22,9 @@ export async function getDailyActiveUsers(days = 7) {
 
 export async function getEngagementRate() {
   try {
-    const total = await pool.query('SELECT COUNT(*) FROM users WHERE is_active = true');
-    const active = await pool.query(
-      `SELECT COUNT(DISTINCT member_id) FROM member_engagement WHERE created_at > NOW() - INTERVAL '1 day'`
+    const total = await query('SELECT COUNT(*) as count FROM users WHERE is_active = true');
+    const active = await query(
+      `SELECT COUNT(DISTINCT member_id) as count FROM member_engagement WHERE created_at > NOW() - INTERVAL '1 day'`
     );
 
     const totalCount = parseInt(total.rows[0]?.count || '0');
@@ -39,7 +39,7 @@ export async function getEngagementRate() {
 
 export async function getTopPosts(limit = 10) {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT discord_message_id, discord_content, engagement_count, member_id
        FROM bot_social_posts
        WHERE engagement_count > 0
@@ -56,7 +56,7 @@ export async function getTopPosts(limit = 10) {
 
 export async function getTierBreakdown() {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT tier, COUNT(*) as count FROM users WHERE is_active = true GROUP BY tier`
     );
     return result.rows;
@@ -68,7 +68,7 @@ export async function getTierBreakdown() {
 
 export async function getTotalPoints() {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT SUM(total_points) as total_points FROM member_progress`
     );
     return parseInt(result.rows[0]?.total_points || '0');

@@ -1,4 +1,4 @@
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -6,25 +6,23 @@ export async function GET(request: Request) {
   const filter = searchParams.get('filter') || 'all';
 
   try {
-    let query = `
-      SELECT u.id, u.name, u.email, u.tier, u.is_active,
-             COALESCE(mp.total_points, 0) as total_points
-      FROM users u
-      LEFT JOIN member_progress mp ON u.id = mp.member_id
-      WHERE (u.name ILIKE $1 OR u.email ILIKE $1)
+    let queryText = `
+      SELECT id, email, first_name as name, tier, is_active
+      FROM users
+      WHERE (first_name ILIKE $1 OR email ILIKE $1)
     `;
 
     const params: any[] = [`%${search}%`];
 
     if (filter === 'active') {
-      query += ` AND u.is_active = true`;
+      queryText += ` AND is_active = true`;
     } else if (filter === 'inactive') {
-      query += ` AND u.is_active = false`;
+      queryText += ` AND is_active = false`;
     }
 
-    query += ` ORDER BY u.created_at DESC LIMIT 100`;
+    queryText += ` ORDER BY created_at DESC LIMIT 100`;
 
-    const result = await pool.query(query, params);
+    const result = await query(queryText, params);
     return Response.json(result.rows);
   } catch (error) {
     console.error('Error fetching members:', error);

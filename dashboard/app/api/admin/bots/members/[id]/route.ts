@@ -1,11 +1,11 @@
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    await pool.query('UPDATE users SET is_active = false WHERE id = $1', [params.id]);
+    await query('UPDATE users SET is_active = false WHERE id = $1', [params.id]);
     return Response.json({ success: true });
   } catch (error) {
     console.error('Error removing member:', error);
@@ -21,7 +21,7 @@ export async function POST(
 
   if (pathname.includes('/approve')) {
     try {
-      await pool.query('UPDATE users SET is_active = true WHERE id = $1', [params.id]);
+      await query('UPDATE users SET is_active = true WHERE id = $1', [params.id]);
       return Response.json({ success: true });
     } catch (error) {
       console.error('Error approving member:', error);

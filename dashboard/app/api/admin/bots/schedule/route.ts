@@ -1,4 +1,4 @@
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function POST(request: Request) {
   const { content, platforms, scheduledTime } = await request.json();
@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await pool.query(
+    await query(
       `INSERT INTO bot_scheduled_posts (content, platforms, scheduled_time, status)
        VALUES ($1, $2, $3, 'pending')`,
       [content, JSON.stringify(platforms), new Date(scheduledTime)]
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const result = await pool.query(
+    const result = await query(
       `SELECT * FROM bot_scheduled_posts WHERE status = 'pending' ORDER BY scheduled_time ASC LIMIT 20`
     );
     return Response.json(result.rows);
