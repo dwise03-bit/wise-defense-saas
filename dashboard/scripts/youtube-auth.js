@@ -20,8 +20,10 @@ async function getAuthCode() {
 
   const secrets = JSON.parse(fs.readFileSync(CLIENT_SECRETS_FILE, "utf-8"));
   const secretsData = secrets.installed || secrets.web;
-  const { client_id, client_secret, redirect_uris } = secretsData;
-  const redirectUri = redirect_uris ? redirect_uris[0] : "http://localhost:3000";
+  const { client_id, client_secret } = secretsData;
+
+  // Use "out of band" (oob) redirect for CLI apps - Google displays code on screen
+  const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
 
   // Generate authorization URL
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -46,12 +48,12 @@ async function getAuthCode() {
   return new Promise((resolve) => {
     rl.question("4. Paste the authorization code here: ", (code) => {
       rl.close();
-      resolve({ code, client_id, client_secret, redirectUri });
+      resolve({ code, client_id, client_secret });
     });
   });
 }
 
-async function exchangeCodeForToken({ code, client_id, client_secret, redirectUri }) {
+async function exchangeCodeForToken({ code, client_id, client_secret }) {
   console.log("\n⏳ Exchanging code for access token...");
 
   try {
@@ -59,7 +61,7 @@ async function exchangeCodeForToken({ code, client_id, client_secret, redirectUr
       code,
       client_id,
       client_secret,
-      redirect_uri: redirectUri,
+      redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
       grant_type: "authorization_code",
     });
 
@@ -95,8 +97,8 @@ async function saveToken(token) {
 
 async function run() {
   try {
-    const { code, client_id, client_secret, redirectUri } = await getAuthCode();
-    const token = await exchangeCodeForToken({ code, client_id, client_secret, redirectUri });
+    const { code, client_id, client_secret } = await getAuthCode();
+    const token = await exchangeCodeForToken({ code, client_id, client_secret });
     await saveToken(token);
   } catch (err) {
     console.error("Error:", err.message);
