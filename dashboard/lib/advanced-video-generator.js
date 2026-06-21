@@ -135,14 +135,30 @@ Script:`;
     const audioPath = path.join("/tmp", `video_${videoId}_audio.mp3`);
 
     try {
-      const command = `echo "${script.replace(/"/g, '\\"')}" | ffmpeg -f lavfi -i text="${script.replace(/"/g, '\\"')}":fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:fontsize=24 -f lavfi -i sine=f=1000:d=60 -pix_fmt yuv420p -y /dev/null 2>&1 | head -1`;
+      // Try espeak (free, lightweight TTS)
+      const cleanScript = script
+        .replace(/\[HOOK\]|\[BODY\]|\[CTA\]/g, "")
+        .replace(/[^\w\s!?.,:'-]/g, " ")
+        .substring(0, 500);
 
-      // Placeholder for Google Cloud TTS integration
-      console.log("[VIDEO] Using placeholder audio (integrate Google Cloud TTS)");
-      fs.writeFileSync(audioPath, "PLACEHOLDER");
+      const command = `espeak -w "${audioPath}" "${cleanScript.replace(/"/g, '\\"')}" 2>/dev/null || \
+                     echo "TTS not available, using silence"`;
+
+      execSync(command, { stdio: "pipe" });
+
+      // If espeak didn't work, create silence
+      if (!fs.existsSync(audioPath) || fs.statSync(audioPath).size < 100) {
+        console.log("[VIDEO] Falling back to silent track (install espeak for voice)");
+        // Create 30-second silence with ffmpeg
+        execSync(
+          `ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=mono -t 30 -q:a 9 "${audioPath}" 2>&1`,
+          { stdio: "pipe" }
+        );
+      }
+
       return audioPath;
     } catch (error) {
-      console.error("[VIDEO] Google TTS error:", error.message);
+      console.error("[VIDEO] TTS error:", error.message);
       return null;
     }
   }
