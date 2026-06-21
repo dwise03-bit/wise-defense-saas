@@ -155,8 +155,13 @@ async function registerCommands() {
         .setDescription('View platform statistics'),
     ];
 
-    await client.application.commands.set(commands);
-    console.log('[DISCORD-BOT] Slash commands registered');
+    const guild = client.guilds.cache.get(GUILD_ID);
+    if (guild) {
+      await guild.commands.set(commands);
+      console.log('[DISCORD-BOT] Slash commands registered to guild:', guild.name);
+    } else {
+      console.error('[DISCORD-BOT] Guild not found:', GUILD_ID);
+    }
   } catch (error) {
     console.error('[DISCORD-BOT] Error registering commands:', error.message);
   }
