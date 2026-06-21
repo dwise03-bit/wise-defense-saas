@@ -1,3 +1,5 @@
+require('dotenv').config({ path: '/home/ubuntu/wise-defense-saas/.env' });
+
 const DB_URL = process.env.DATABASE_URL || 'postgresql://postgres:SuperSecurePassword123@localhost:5432/wisedefense?sslmode=disable';
 
 module.exports = {
