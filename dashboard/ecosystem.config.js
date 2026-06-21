@@ -187,6 +187,20 @@ module.exports = {
         DATABASE_URL: process.env.DATABASE_URL,
       },
     },
+    {
+      name: 'quality-scoring-agent',
+      script: './agents/quality-scoring-agent.js',
+      instances: 1,
+      exec_mode: 'fork',
+      restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: '10s',
+      env: {
+        NODE_ENV: 'production',
+        DATABASE_URL: process.env.DATABASE_URL,
+        OLLAMA_MODEL: process.env.OLLAMA_MODEL || 'mistral',
+      },
+    },
     // {
     //   name: 'telegram-bot',
     //   script: './agents/telegram-bot.js',
