@@ -1,338 +1,371 @@
 /**
- * Social Media Agent
- *
- * Standalone Node.js script for PM2 orchestration.
- * Runs scheduled tasks to:
- * - Auto-post weekly training tips to social media
- * - Share student success stories and certificates
- * - Post engagement content (testimonials, course updates)
- * - Track social media metrics
- *
- * Environment variables required:
- * - DATABASE_URL: PostgreSQL connection string
- * - TWITTER_API_KEY: Twitter API key
- * - TWITTER_API_SECRET: Twitter API secret
- * - TWITTER_ACCESS_TOKEN: Twitter access token
- * - TWITTER_ACCESS_TOKEN_SECRET: Twitter access token secret
- * - INSTAGRAM_ACCESS_TOKEN: Instagram Graph API token
- * - LINKEDIN_ACCESS_TOKEN: LinkedIn API token
+ * Social Media Posting Agent
+ * PM2-managed service that posts generated content to social platforms
+ * Runs every 2 hours to batch-post high-quality 2nd Amendment content
  */
 
 const pg = require('pg');
+const axios = require('axios');
 
-// Initialize PostgreSQL pool
+// Ollama configuration
+const OLLAMA_API = process.env.OLLAMA_API || 'http://localhost:11434/api/generate';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama2';
+
+// Clean HTML entities and heading markup from content
+function cleanContent(text) {
+  if (!text) return '';
+  return text
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/<h[1-6][^>]*>/gi, '')
+    .replace(/<\/h[1-6]>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+}
+
+/**
+ * Generate social media posts from reviewed articles using Claude
+ */
+async function generatePostsFromArticles() {
+  try {
+    // Find reviewed articles that don't have posts yet
+    const result = await pool.query(`
+      SELECT
+        a.id, a.title, a.content, a.source_url,
+        cr.relevance_score, cr.sentiment
+      FROM content_reviews cr
+      JOIN news_articles a ON cr.article_id = a.id
+      WHERE cr.recommended_for_social = true
+      AND a.id NOT IN (SELECT DISTINCT article_id FROM social_posts_generated)
+      AND cr.relevance_score > 0.7
+      ORDER BY cr.relevance_score DESC
+      LIMIT 3
+    `);
+
+    const articles = result.rows;
+    if (articles.length === 0) {
+      console.log('[SOCIAL] No new articles to generate posts from');
+      return 0;
+    }
+
+    console.log(`[SOCIAL] Generating posts for ${articles.length} articles...`);
+    let postsCreated = 0;
+
+    for (const article of articles) {
+      const prompt = `You are a 2nd Amendment news social media expert. Create concise, engaging social media posts for the following article:
+
+Title: ${article.title}
+Source: ${article.source_url}
+Summary: ${cleanContent(article.content).substring(0, 300)}...
+
+Generate posts in this JSON format (return ONLY valid JSON, no other text):
+{
+  "telegram": "A focused, fact-based post for Telegram (150-250 chars) with relevant #hashtags",
+  "twitter": "An engaging tweet (under 280 chars) with #hashtags and emoji",
+  "instagram": "An engaging Instagram caption (150-250 chars) with call-to-action",
+  "linkedin": "A professional LinkedIn post (100-150 chars) for advocacy",
+  "discord": "A Discord announcement post (200 chars) with context"
+}
+
+Focus on 2nd Amendment advocacy, gun rights, and relevant legislation.`;
+
+      try {
+        const response = await axios.post(OLLAMA_API, {
+          model: OLLAMA_MODEL,
+          prompt: prompt,
+          stream: false,
+          temperature: 0.7,
+        });
+
+        const responseText = response.data.response || '{}';
+        // Extract JSON from response (Ollama may include extra text)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        const posts = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+
+        // Insert generated posts
+        for (const [platform, content] of Object.entries(posts)) {
+          if (content && platform !== 'twitter') {
+            // Skip twitter for now (need API credentials)
+            await pool.query(
+              `INSERT INTO social_posts_generated (article_id, platform, content_text, hashtags, status)
+               VALUES ($1, $2, $3, $4, 'pending')
+               ON CONFLICT DO NOTHING`,
+              [article.id, platform, content, '#2A #GunRights #2ndAmendment']
+            );
+            postsCreated++;
+          }
+        }
+
+        console.log(`[SOCIAL] Generated posts for article: ${article.title.substring(0, 50)}`);
+      } catch (error) {
+        console.error('[SOCIAL] Error generating posts:', error.message);
+      }
+    }
+
+    return postsCreated;
+  } catch (error) {
+    console.error('[SOCIAL] Error in post generation:', error);
+    return 0;
+  }
+}
+
+// Initialize database pool
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || 'postgresql://localhost/wisedefense',
   ssl: false,
 });
 
-pool.on('error', (err) => {
-  console.error('[SOCIAL] Unexpected database error:', err);
-});
+// Agent state tracking
+const postalState = {
+  isRunning: false,
+  lastRun: null,
+  postsPublished: 0,
+  platformStats: {},
+  errors: [],
+};
 
 /**
- * Query helper
+ * Get pending posts for platform
  */
-async function query(text, params = []) {
+async function getPendingPosts(platform, limit = 5) {
   try {
-    const result = await pool.query(text, params);
-    return result;
+    const result = await pool.query(
+      `SELECT * FROM social_posts_generated
+       WHERE platform = $1 AND status = 'pending'
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [platform, limit]
+    );
+    return result.rows;
   } catch (error) {
-    console.error('[SOCIAL] Query error:', { text, params, error: error.message });
-    throw error;
+    console.error('[SOCIAL] Error fetching pending posts:', error.message);
+    return [];
   }
 }
 
 /**
- * Post to social media platforms
+ * Mark post as posted
  */
-async function postToSocialMedia(platform, content, media_url = null) {
+async function markPostPosted(postId, platform, postUrl) {
   try {
-    const platformToken = process.env[`${platform.toUpperCase()}_ACCESS_TOKEN`];
-    if (!platformToken) {
-      console.log(`[SOCIAL] ${platform} token not configured, skipping post`);
-      return false;
-    }
-
-    // Log the post to database for tracking
-    await query(
-      `INSERT INTO social_media_posts (platform, content, media_url, status, posted_at)
-       VALUES ($1, $2, $3, 'posted', NOW())`,
-      [platform, content, media_url]
+    await pool.query(
+      `UPDATE social_posts_generated
+       SET status = 'posted', posted_at = NOW(), post_url = $1
+       WHERE id = $2 AND platform = $3`,
+      [postUrl, postId, platform]
     );
-
-    console.log(`[SOCIAL] Posted to ${platform}: "${content.substring(0, 50)}..."`);
     return true;
   } catch (error) {
-    console.error(`[SOCIAL] Error posting to ${platform}:`, error.message);
+    console.error('[SOCIAL] Error marking post:', error.message);
     return false;
   }
 }
 
 /**
- * Task 1: Post weekly training tips
- * Runs every Monday at 8:00 AM
+ * Post to Telegram
  */
-async function taskPostWeeklyTips() {
-  console.log('[SOCIAL] Running task: Post weekly training tips...');
+async function postToTelegram(post) {
+  const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+  const telegramChannelId = process.env.TELEGRAM_CHANNEL_ID;
+
+  if (!telegramBotToken || !telegramChannelId) {
+    console.log('[SOCIAL] Telegram not configured');
+    return null;
+  }
 
   try {
-    const tips = [
-      '🎯 Tip of the Week: Consistent dry fire practice is the foundation of accurate shooting. Dedicate 15 minutes daily to building muscle memory. #FirearmTraining #Marksmanship',
-      '💪 Weekly Challenge: Focus on your grip this week. A proper grip reduces recoil and improves accuracy. Tag us with your progress! #TrainingTips #Shooting',
-      '🔥 Safety First: Always practice the 4 fundamental rules of firearm safety. Safety is not negotiable. #ResponsibleGunOwner #SafetyMatters',
-      '📈 Progress Check: Review your last session\'s targets. Identify patterns and areas for improvement. Small improvements compound! #TrainingGoals #Marksmanship',
-      '⚡ Speed & Accuracy: This week, focus on controlled pairs at various distances. Speed comes with consistency! #ShootingDrills #Precision',
-    ];
-
-    const tip = tips[Math.floor(Math.random() * tips.length)];
-
-    // Post to all platforms
-    await postToSocialMedia('twitter', tip);
-    await postToSocialMedia('instagram', tip);
-    await postToSocialMedia('linkedin',
-      `${tip.replace(/#/g, '')} - Complete your training today at wise2.net`);
-
-    console.log('[SOCIAL] Weekly training tips posted');
+    const cleanedContent = cleanContent(post.content_text);
+    const message = `${cleanedContent}\n\n${post.hashtags}`;
+    const response = await axios.post(
+      `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
+      {
+        chat_id: telegramChannelId,
+        text: message,
+        parse_mode: 'HTML',
+      }
+    );
+    console.log('[SOCIAL] Posted to Telegram');
+    return { platform: 'telegram', status: 'posted', postUrl: `telegram-${response.data.result.message_id}` };
   } catch (error) {
-    console.error('[SOCIAL] Error in weekly tips task:', error.message);
+    console.error('[SOCIAL] Telegram error:', error.message);
+    return null;
   }
 }
 
 /**
- * Task 2: Share student success stories
- * Runs every Friday at 4:00 PM
+ * Post to Discord
  */
-async function taskShareSuccessStories() {
-  console.log('[SOCIAL] Running task: Share student success stories...');
+async function postToDiscord(post) {
+  const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
+
+  if (!discordWebhookUrl) {
+    console.log('[SOCIAL] Discord not configured');
+    return null;
+  }
 
   try {
-    // Get recent student achievements
-    const result = await query(
-      `SELECT u.first_name, u.last_name, m.tier,
-              COUNT(s.id) as sessions_completed,
-              (SELECT AVG(score) FROM student_progress WHERE user_id = u.id) as avg_score
-       FROM users u
-       JOIN memberships m ON u.id = m.user_id
-       LEFT JOIN sessions s ON u.id = ANY(s.student_ids)
-       WHERE m.status = 'active'
-       AND s.scheduled_time < NOW()
-       AND s.status = 'completed'
-       GROUP BY u.id, u.first_name, u.last_name, m.tier
-       HAVING COUNT(s.id) >= 5
-       ORDER BY sessions_completed DESC
-       LIMIT 3`
-    );
+    const message = {
+      content: `${post.content_text}\n\n${post.hashtags}`,
+      embeds: [{
+        title: 'New 2nd Amendment News',
+        description: post.content_text.substring(0, 200),
+        color: 15158332,
+        fields: [{
+          name: 'Call to Action',
+          value: post.call_to_action,
+        }],
+        timestamp: new Date().toISOString(),
+      }],
+    };
 
-    const successStories = result.rows;
+    await axios.post(discordWebhookUrl, message);
+    console.log('[SOCIAL] Posted to Discord');
+    return { platform: 'discord', status: 'posted', postUrl: 'discord' };
+  } catch (error) {
+    console.error('[SOCIAL] Discord error:', error.message);
+    return null;
+  }
+}
 
-    for (const story of successStories) {
-      const studentName = story.first_name || 'Student';
-      const content =
-        `🌟 Success Story Alert! 🌟\n\n` +
-        `Congratulations to ${studentName} on completing ${story.sessions_completed} training sessions! ` +
-        `${story.tier.toUpperCase()} member with an average score of ${Math.round(story.avg_score)}%.\n\n` +
-        `Your dedication is inspiring! Keep pushing your limits. 💪\n\n` +
-        `#TrainingSuccess #FirearmTraining #WiseDefense`;
+/**
+ * Post content
+ */
+async function postContent(post) {
+  console.log(`[SOCIAL] Processing ${post.platform} post from article ${post.article_id}`);
 
-      // Post to all platforms
-      await postToSocialMedia('twitter', content);
-      await postToSocialMedia('instagram', content);
-      await postToSocialMedia('linkedin',
-        `We're proud of our students' commitment to continuous improvement and excellence in tactical training. ${studentName} is setting the bar high!`);
+  let result = null;
+
+  switch (post.platform) {
+    case 'telegram':
+      result = await postToTelegram(post);
+      break;
+    case 'discord':
+      result = await postToDiscord(post);
+      break;
+    case 'twitter':
+    case 'instagram':
+    case 'linkedin':
+      // These require API credentials - ready for integration
+      result = { platform: post.platform, status: 'ready' };
+      console.log(`[SOCIAL] ${post.platform} post ready (awaiting API credentials)`);
+      break;
+  }
+
+  if (result && result.status === 'posted') {
+    await markPostPosted(post.id, post.platform, result.postUrl);
+    if (!postalState.platformStats[post.platform]) {
+      postalState.platformStats[post.platform] = 0;
+    }
+    postalState.platformStats[post.platform]++;
+    postalState.postsPublished++;
+    console.log(`[SOCIAL] ✅ Posted to ${post.platform}`);
+  }
+
+  return result;
+}
+
+/**
+ * Run posting cycle
+ */
+async function runPostingCycle() {
+  if (postalState.isRunning) {
+    console.log('[SOCIAL] Cycle running, skipping');
+    return;
+  }
+
+  postalState.isRunning = true;
+  postalState.postsPublished = 0;
+  postalState.platformStats = {};
+  postalState.errors = [];
+
+  const startTime = Date.now();
+
+  try {
+    console.log('[SOCIAL] ========================================');
+    console.log('[SOCIAL] Starting social media posting cycle');
+    console.log('[SOCIAL] ========================================');
+
+    // Generate posts from reviewed articles first
+    const postsGenerated = await generatePostsFromArticles();
+    if (postsGenerated > 0) {
+      console.log(`[SOCIAL] Generated ${postsGenerated} new posts from articles`);
     }
 
-    console.log('[SOCIAL] Success stories shared');
-  } catch (error) {
-    console.error('[SOCIAL] Error in success stories task:', error.message);
-  }
-}
+    const platforms = ['twitter', 'instagram', 'linkedin', 'telegram', 'discord'];
 
-/**
- * Task 3: Post engagement content (testimonials, tips)
- * Runs every Wednesday at 10:00 AM
- */
-async function taskPostEngagementContent() {
-  console.log('[SOCIAL] Running task: Post engagement content...');
+    for (const platform of platforms) {
+      try {
+        const pendingPosts = await getPendingPosts(platform, 3);
+        console.log(`[SOCIAL] Found ${pendingPosts.length} pending posts for ${platform}`);
 
-  try {
-    const engagementContent = [
-      `What keeps our students coming back? 👇\n\n"The personalized coaching at Wise Defense transformed my shooting. Best investment I\'ve made." - Student\n\n#Testimonial #TrainingResults #ProvenSuccess`,
-      `New to firearms training? 🔰\n\nOur Beginner Fundamentals course covers:\n✓ Safe handling\n✓ Proper stance & grip\n✓ Marksmanship basics\n✓ Safety protocols\n\nStart your journey today! #BeginnerFriendly #SafeTraining`,
-      `Did you know? 📊\n\nStudents who practice consistently improve their accuracy by 40% in just 8 weeks.\n\nThe secret? Dedication + proper instruction = Results!\n\n#TrainingTips #SkillBuilding #MarksmanshipMatters`,
-      `Tactical Tip Tuesday 🎯\n\nBody positioning affects everything:\n• Stance determines stability\n• Grip controls recoil\n• Sight alignment = accuracy\n\nMaster the fundamentals, master the shot. #Precision #Tactics`,
-    ];
-
-    const content = engagementContent[Math.floor(Math.random() * engagementContent.length)];
-
-    // Post to all platforms
-    await postToSocialMedia('twitter', content);
-    await postToSocialMedia('instagram', content);
-    await postToSocialMedia('linkedin',
-      `At Wise Defense, we believe in data-driven training methods. Our students see measurable results. Learn what makes the difference.`);
-
-    console.log('[SOCIAL] Engagement content posted');
-  } catch (error) {
-    console.error('[SOCIAL] Error in engagement content task:', error.message);
-  }
-}
-
-/**
- * Task 4: Track social media metrics
- * Runs daily at 6:00 PM
- */
-async function taskTrackMetrics() {
-  console.log('[SOCIAL] Running task: Track social media metrics...');
-
-  try {
-    // This would integrate with actual social media APIs to fetch metrics
-    // For now, we'll track posts in our database
-    const postsResult = await query(
-      `SELECT platform, COUNT(*) as post_count,
-              SUM(CASE WHEN likes > 0 THEN likes ELSE 0 END) as total_likes,
-              SUM(CASE WHEN shares > 0 THEN shares ELSE 0 END) as total_shares
-       FROM social_media_posts
-       WHERE posted_at > NOW() - INTERVAL '30 days'
-       GROUP BY platform`
-    );
-
-    console.log('[SOCIAL] Metrics for last 30 days:');
-    for (const metric of postsResult.rows) {
-      console.log(`  ${metric.platform}: ${metric.post_count} posts, ` +
-                  `${metric.total_likes || 0} likes, ${metric.total_shares || 0} shares`);
+        for (const post of pendingPosts) {
+          await postContent(post);
+        }
+      } catch (error) {
+        console.error(`[SOCIAL] ${platform} error:`, error.message);
+        postalState.errors.push({ platform, error: error.message });
+      }
     }
 
-    console.log('[SOCIAL] Metrics tracking completed');
+    const duration = Date.now() - startTime;
+
+    console.log('[SOCIAL] ========================================');
+    console.log(`[SOCIAL] Posts published: ${postalState.postsPublished}`);
+    Object.entries(postalState.platformStats).forEach(([p, c]) => {
+      console.log(`[SOCIAL]   ${p}: ${c}`);
+    });
+    console.log(`[SOCIAL] Duration: ${duration}ms`);
+    console.log(`[SOCIAL] Errors: ${postalState.errors.length}`);
+    console.log('[SOCIAL] ========================================');
+
+    postalState.lastRun = new Date();
   } catch (error) {
-    console.error('[SOCIAL] Error in metrics task:', error.message);
+    console.error('[SOCIAL] Fatal error:', error);
+  } finally {
+    postalState.isRunning = false;
   }
 }
 
 /**
- * Schedule jobs using setInterval
+ * Initialize and start
  */
-function scheduleJobs() {
-  console.log('[SOCIAL] Scheduling social media campaigns...');
+async function start() {
+  console.log('[SOCIAL] Social Media Posting Agent starting...');
 
-  /**
-   * Task 1: Weekly tips - Monday 8:00 AM
-   */
-  function scheduleWeeklyTips() {
-    const now = new Date();
-    const nextMonday = new Date(now);
-    nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7));
-    nextMonday.setHours(8, 0, 0, 0);
-
-    const delayMs = nextMonday.getTime() - now.getTime();
-    console.log(`[SOCIAL] Weekly tips campaign scheduled for ${Math.round(delayMs / 1000)}ms`);
-
-    setTimeout(() => {
-      taskPostWeeklyTips();
-      setInterval(taskPostWeeklyTips, 7 * 24 * 60 * 60 * 1000);
-    }, delayMs);
-  }
-
-  /**
-   * Task 2: Success stories - Friday 4:00 PM
-   */
-  function scheduleSuccessStories() {
-    const now = new Date();
-    const nextFriday = new Date(now);
-    const daysUntilFriday = (5 - nextFriday.getDay() + 7) % 7;
-    nextFriday.setDate(nextFriday.getDate() + (daysUntilFriday || 7));
-    nextFriday.setHours(16, 0, 0, 0);
-
-    const delayMs = nextFriday.getTime() - now.getTime();
-    console.log(`[SOCIAL] Success stories campaign scheduled for ${Math.round(delayMs / 1000)}ms`);
-
-    setTimeout(() => {
-      taskShareSuccessStories();
-      setInterval(taskShareSuccessStories, 7 * 24 * 60 * 60 * 1000);
-    }, delayMs);
-  }
-
-  /**
-   * Task 3: Engagement content - Wednesday 10:00 AM
-   */
-  function scheduleEngagementContent() {
-    const now = new Date();
-    const nextWednesday = new Date(now);
-    const daysUntilWednesday = (3 - nextWednesday.getDay() + 7) % 7;
-    nextWednesday.setDate(nextWednesday.getDate() + (daysUntilWednesday || 7));
-    nextWednesday.setHours(10, 0, 0, 0);
-
-    const delayMs = nextWednesday.getTime() - now.getTime();
-    console.log(`[SOCIAL] Engagement content campaign scheduled for ${Math.round(delayMs / 1000)}ms`);
-
-    setTimeout(() => {
-      taskPostEngagementContent();
-      setInterval(taskPostEngagementContent, 7 * 24 * 60 * 60 * 1000);
-    }, delayMs);
-  }
-
-  /**
-   * Task 4: Metrics tracking - Daily at 6:00 PM
-   */
-  function scheduleMetricsTracking() {
-    const now = new Date();
-    const nextTracking = new Date(now);
-    nextTracking.setDate(nextTracking.getDate() + 1);
-    nextTracking.setHours(18, 0, 0, 0);
-
-    const delayMs = nextTracking.getTime() - now.getTime();
-    console.log(`[SOCIAL] Metrics tracking scheduled for ${Math.round(delayMs / 1000)}ms`);
-
-    setTimeout(() => {
-      taskTrackMetrics();
-      setInterval(taskTrackMetrics, 24 * 60 * 60 * 1000);
-    }, delayMs);
-  }
-
-  scheduleWeeklyTips();
-  scheduleSuccessStories();
-  scheduleEngagementContent();
-  scheduleMetricsTracking();
-}
-
-/**
- * Graceful shutdown handler
- */
-async function shutdown() {
-  console.log('[SOCIAL] Shutting down gracefully...');
   try {
-    await pool.end();
-    console.log('[SOCIAL] Database pool closed');
-    process.exit(0);
+    const testResult = await pool.query('SELECT NOW() as now');
+    console.log('[SOCIAL] Database connected:', testResult.rows[0].now);
+
+    console.log('[SOCIAL] Running initial posting cycle...');
+    await runPostingCycle();
+
+    const POSTING_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
+
+    setInterval(async () => {
+      await runPostingCycle();
+    }, POSTING_INTERVAL);
+
+    console.log('[SOCIAL] Agent ready - next posting in 2 hours');
   } catch (error) {
-    console.error('[SOCIAL] Error during shutdown:', error);
+    console.error('[SOCIAL] Startup error:', error);
     process.exit(1);
   }
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-/**
- * Main entry point
- */
-async function main() {
-  console.log('[SOCIAL] Agent started. Running social media campaigns...');
-
-  // Verify database connection
-  try {
-    await pool.query('SELECT 1');
-    console.log('[SOCIAL] Database connection verified');
-  } catch (error) {
-    console.error('[SOCIAL] Failed to connect to database:', error.message);
-    process.exit(1);
-  }
-
-  // Schedule all jobs
-  scheduleJobs();
-}
-
-// Run the agent
-main().catch((error) => {
-  console.error('[SOCIAL] Fatal error:', error);
-  process.exit(1);
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('[SOCIAL] Shutting down...');
+  await pool.end();
+  process.exit(0);
 });
+
+process.on('SIGINT', async () => {
+  console.log('[SOCIAL] Shutting down...');
+  await pool.end();
+  process.exit(0);
+});
+
+start();

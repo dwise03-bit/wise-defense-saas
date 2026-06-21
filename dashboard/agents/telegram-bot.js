@@ -17,6 +17,9 @@
 
 const pg = require('pg');
 
+// Note: aiTips module is TypeScript/compiled, using template-based approach for now
+// In production with TypeScript support, would import: const { generatePersonalizedTip } = require('../../lib/botEngineering/aiTips');
+
 // Initialize PostgreSQL pool
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -123,31 +126,41 @@ async function taskPostDailyTips() {
   console.log('[TELEGRAM] Running task: Post daily tips...');
 
   try {
-    const tips = [
-      '💡 Daily Tip: Consistency beats intensity. 15 minutes of focused practice daily will improve your shooting more than sporadic intense sessions.',
-      '🎯 Daily Tip: Focus on your fundamentals - stance, grip, sight alignment, and trigger control. Master these and everything else becomes easier.',
-      '🔥 Daily Tip: Always practice safety first. The four rules should be automatic before every shot.',
-      '📊 Daily Tip: Track your progress. Keep a log of your sessions, targets, and scores to identify patterns and areas for improvement.',
-      '⚡ Daily Tip: Breathe! Controlled breathing before and during the shot improves accuracy significantly.',
-      '💪 Daily Tip: Stay hydrated and well-rested. Physical fitness directly impacts shooting performance.',
-      '🏆 Daily Tip: Set goals. Whether it\'s accuracy, speed, or consistency, having clear goals keeps you motivated.',
-    ];
+    // Tips by skill level for personalization
+    const tipsByLevel = {
+      beginner: [
+        '🔰 Today: Master the grip. A solid grip is the foundation of everything.',
+        '🔰 Drill: 10 dry fires focusing on sight alignment. Quality over speed.',
+        '🔰 Remember: Safety first. Always follow the four rules.',
+      ],
+      intermediate: [
+        '📍 Today: Work on accuracy at 25 yards. Group your shots tight.',
+        '📍 Drill: 50 rounds of draw-to-first-shot practice.',
+        '📍 Challenge: One-handed shooting from your weak hand.',
+      ],
+      advanced: [
+        '🎯 Today: Speed and accuracy under pressure. Push your limits.',
+        '🎯 Drill: Competitive stage walk-through and timed runs.',
+        '🎯 Advanced: Multi-target transitions at high speed.',
+      ],
+    };
 
-    const tip = tips[Math.floor(Math.random() * tips.length)];
-
-    // Get all users who have subscribed to tips
+    // Get all users with Telegram enabled and their skill levels
     const usersResult = await query(
-      `SELECT telegram_chat_id FROM users
+      `SELECT id, telegram_chat_id, experience_level FROM users
        WHERE telegram_chat_id IS NOT NULL
-       AND is_active = true
-       AND telegram_tips_enabled = true`
+       AND is_active = true`
     );
 
     for (const user of usersResult.rows) {
-      await sendTelegramMessage(user.telegram_chat_id, `${tip}\n\n#Training #Shooting #WiseDefense`);
+      const skillLevel = user.experience_level || 'beginner';
+      const tips = tipsByLevel[skillLevel] || tipsByLevel.beginner;
+      const tip = tips[Math.floor(Math.random() * tips.length)];
+
+      await sendTelegramMessage(user.telegram_chat_id, `💡 **Daily Training Tip**\n\n${tip}`);
     }
 
-    console.log('[TELEGRAM] Daily tips posted');
+    console.log(`[TELEGRAM] Daily tips posted to ${usersResult.rows.length} members`);
   } catch (error) {
     console.error('[TELEGRAM] Error in daily tips task:', error.message);
   }
