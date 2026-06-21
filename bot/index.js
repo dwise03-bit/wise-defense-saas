@@ -40,6 +40,20 @@ client.on("messageCreate", (message) => {
 
 client.once("ready", () => {
   console.log(`LOGIN SUCCESS: ${client.user.tag} | ADMIN_ID=${ADMIN_ID}`);
+  console.log(`Guilds: ${client.guilds.cache.map(g => `${g.name}(${g.id})`).join(', ')}`);
+  // Send startup ping to first text channel the bot can see
+  const guild = client.guilds.cache.first();
+  if (guild) {
+    const channel = guild.channels.cache.find(c => c.isTextBased() && c.permissionsFor(guild.members.me).has('SendMessages'));
+    if (channel) {
+      channel.send('✅ Admin bot online. Commands: `!status` `!logs [service]` `!restart`').catch(console.error);
+      console.log(`Sent startup ping to #${channel.name}`);
+    } else {
+      console.log('No writable channel found');
+    }
+  } else {
+    console.log('Bot is in NO guilds');
+  }
 });
 
 client.login(process.env.BOT_TOKEN).catch(console.error);
