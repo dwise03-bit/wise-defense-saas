@@ -20,8 +20,12 @@ function run(message, cmd) {
 }
 
 client.on("messageCreate", (message) => {
+  console.log(`[MSG] from=${message.author.id} content=${message.content}`);
   if (message.author.bot) return;
-  if (message.author.id !== ADMIN_ID) return;
+  if (message.author.id !== ADMIN_ID) {
+    console.log(`[MSG] ignored — not admin (expected ${ADMIN_ID})`);
+    return;
+  }
 
   const args = message.content.trim().split(" ");
   const cmd = args[0];
@@ -34,10 +38,8 @@ client.on("messageCreate", (message) => {
   message.reply("Commands: !status !update !restart !logs");
 });
 
-client.login(process.env.BOT_TOKEN);
-
 client.once("ready", () => {
-  console.log("LOGIN SUCCESS:", client.user.tag);
+  console.log(`LOGIN SUCCESS: ${client.user.tag} | ADMIN_ID=${ADMIN_ID}`);
 });
 
 client.login(process.env.BOT_TOKEN).catch(console.error);
