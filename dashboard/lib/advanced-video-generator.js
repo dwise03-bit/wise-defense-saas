@@ -150,28 +150,49 @@ Script:`;
   // 3. ENHANCED VIDEO COMPOSITION
   async generateEnhancedVideo(script, article, audioPath, videoId) {
     try {
-      const videoPath = path.join("/tmp", `video_${videoId}_final.mp4`);
+      const outputDir = process.env.VIDEO_OUTPUT_DIR || "/home/ubuntu/videos";
+      fs.mkdirSync(outputDir, { recursive: true });
+      const videoPath = path.join(outputDir, `article_${videoId}.mp4`);
 
-      // Generate beautiful background with text overlays
-      const ffmpegCommand = `ffmpeg \
-        -f lavfi -i color=c=black:s=1440x2560:d=60 \
-        -i "${audioPath}" \
-        -vf "
-          drawtext=text='${article.title.substring(0, 40).replace(/"/g, '\\"')}':fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:fontsize=60:fontcolor=white:x=(w-text_w)/2:y=200:enable='between(t,0,20)',
-          drawtext=text='Tap Subscribe':fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:fontsize=40:fontcolor=yellow:x=(w-text_w)/2:y=h-200:enable='between(t,55,60)'
-        " \
-        -c:v libx264 -crf 18 -preset fast \
-        -c:a aac -b:a 192k \
-        -pix_fmt yuv420p \
-        -y "${videoPath}" 2>&1`;
+      // Extract 3 key lines from script body for overlay text
+      const lines = script.split("\n").filter(l => l.trim().length > 20 && !l.startsWith("["));
+      const line1 = (lines[0] || "").substring(0, 50).replace(/'/g, "");
+      const line2 = (lines[1] || "").substring(0, 50).replace(/'/g, "");
+      const titleClean = article.title.substring(0, 36).replace(/'/g, "").replace(/[^\w\s:+\-!?]/g, "");
 
-      execSync(ffmpegCommand, { stdio: "pipe" });
+      // Two-tone gradient bg + layered text overlays — portrait 1080x1920 (Shorts format)
+      const audioInput = audioPath && fs.existsSync(audioPath) && fs.statSync(audioPath).size > 100
+        ? `-i "${audioPath}"`
+        : "-f lavfi -i anullsrc=r=44100:cl=mono";
+      const audioCodec = audioPath && fs.existsSync(audioPath) && fs.statSync(audioPath).size > 100
+        ? "-c:a aac -b:a 192k"
+        : "-c:a aac -b:a 64k";
+
+      const ffmpegCmd = [
+        "ffmpeg -y",
+        "-f lavfi -i 'color=c=0x1a1a2e:s=1080x1920:d=30,format=yuv420p'",
+        "-f lavfi -i 'color=c=0x16213e:s=1080x1920:d=30,format=yuv420p'",
+        audioInput,
+        "-filter_complex \"",
+        "  [0][1]blend=all_expr='if(gte(Y,H/2),A,B)'[bg];",
+        `  [bg]drawtext=text='BREAKING NEWS':fontsize=52:fontcolor=red:x=(w-text_w)/2:y=160:box=1:boxcolor=black@0.5:boxborderw=8,`,
+        `  drawtext=text='${titleClean}':fontsize=64:fontcolor=white:x=(w-text_w)/2:y=290:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf,`,
+        `  drawtext=text='${line1}':fontsize=38:fontcolor=0xadb5bd:x=60:y=600:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf,`,
+        `  drawtext=text='${line2}':fontsize=38:fontcolor=0xadb5bd:x=60:y=660:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf,`,
+        `  drawtext=text='wise2.net':fontsize=42:fontcolor=0x90e0ef:x=(w-text_w)/2:y=1700,`,
+        `  drawtext=text='👇 SUBSCRIBE FOR UPDATES 👇':fontsize=46:fontcolor=yellow:x=(w-text_w)/2:y=1580:enable='gte(t,5)'`,
+        "\"",
+        `-t 30 -r 30 -c:v libx264 -crf 20 -preset fast -pix_fmt yuv420p ${audioCodec}`,
+        `"${videoPath}"`,
+      ].join(" \\\n");
+
+      execSync(ffmpegCmd, { stdio: "pipe" });
 
       return {
         path: videoPath,
-        resolution: "1440p",
+        resolution: "1080x1920",
         quality: "high",
-        duration: 60,
+        duration: 30,
       };
     } catch (error) {
       console.error("[VIDEO] Video composition error:", error.message);
