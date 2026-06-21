@@ -53,6 +53,9 @@ services:
     build: ./bot
     env_file:
       - .env
+    environment:
+      - ADMIN_ID=${ADMIN_ID}
+      - BOT_TOKEN=${BOT_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
