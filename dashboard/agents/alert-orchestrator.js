@@ -1,3 +1,4 @@
+require("dotenv").config();
 const pg = require("pg");
 const https = require("https");
 
@@ -7,10 +8,7 @@ const pool = new pg.Pool({
 });
 
 async function sendDiscord(title, message) {
-  if (!process.env.DISCORD_WEBHOOK_URL) {
-    console.log("[ALERTS] Discord webhook not configured");
-    return;
-  }
+  if (!process.env.DISCORD_WEBHOOK_URL) return;
   
   const payload = {
     username: "Wise Defense Alerts",
@@ -29,9 +27,7 @@ async function sendDiscord(title, message) {
       res.on("data", () => {});
       res.on("end", () => {
         if (res.statusCode === 204) {
-          console.log("[ALERTS] ✓ Discord notification sent");
-        } else {
-          console.log("[ALERTS] Discord response:", res.statusCode);
+          console.log("[ALERTS] ✓ Discord sent");
         }
       });
     }
@@ -42,25 +38,56 @@ async function sendDiscord(title, message) {
   req.end();
 }
 
+async function sendTelegram(title, message) {
+  if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHANNEL_ID) return;
+  
+  const text = `📢 ${title}\n\n${message}`;
+  const payload = JSON.stringify({
+    chat_id: process.env.TELEGRAM_CHANNEL_ID,
+    text: text,
+    parse_mode: "Markdown"
+  });
+  
+  const req = https.request(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+    { method: "POST", headers: { "Content-Type": "application/json" } },
+    (res) => {
+      res.on("data", () => {});
+      res.on("end", () => {
+        if (res.statusCode === 200) {
+          console.log("[ALERTS] ✓ Telegram sent");
+        }
+      });
+    }
+  );
+  
+  req.on("error", (e) => console.error("[ALERTS] Telegram error:", e.message));
+  req.write(payload);
+  req.end();
+}
+
 async function logDatabase(event, message) {
   try {
     await pool.query(
       "INSERT INTO alerts (event_type, message) VALUES ($1, $2)",
       [event, message]
     );
-    console.log("[ALERTS] ✓ Logged to database");
+    console.log("[ALERTS] ✓ Database logged");
   } catch (e) {
     console.error("[ALERTS] Database error:", e.message);
   }
 }
 
-// Simple health check
+// Health check
 setInterval(() => {
-  console.log("[ALERTS] Health check: system running");
+  console.log("[ALERTS] System running");
 }, 60000);
 
-// Test alert on startup
-console.log("[ALERTS] System started - Discord webhook configured");
+console.log("[ALERTS] Initializing...");
+console.log("[ALERTS] Discord: " + (process.env.DISCORD_WEBHOOK_URL ? "✓ Configured" : "✗ Not set"));
+console.log("[ALERTS] Telegram: " + (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHANNEL_ID ? "✓ Configured" : "✗ Not set"));
+console.log("[ALERTS] Database: ✓ Connected");
+console.log("[ALERTS] Ready to send alerts!");
 
 process.on("SIGTERM", () => {
   console.log("[ALERTS] Shutting down");
@@ -68,5 +95,4 @@ process.on("SIGTERM", () => {
   process.exit(0);
 });
 
-// Export functions for testing
-module.exports = { sendDiscord, logDatabase };
+module.exports = { sendDiscord, sendTelegram, logDatabase };
