@@ -66,15 +66,16 @@ async function processVideoQueue() {
           continue;
         }
 
-        // Save to database
+        // Save to database with video_path
         await pool.query(
           `INSERT INTO youtube_videos
-           (article_id, title, script, status, created_at)
-           VALUES ($1, $2, $3, 'pending_review', NOW())`,
-          [article.id, youtubeOptimization.title, script]
+           (article_id, title, script, description, video_path, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, 'pending_review', NOW())
+           ON CONFLICT DO NOTHING`,
+          [article.id, youtubeOptimization.title, script, youtubeOptimization.description, videoResult.path]
         );
 
-        console.log(`[VIDEO-PRO] ✅ Video #${article.id} generated (Quality: ${qualityMetrics.overallScore}/100)`);
+        console.log(`[VIDEO-PRO] ✅ Video #${article.id} generated → ${videoResult.path} (Quality: ${qualityMetrics.overallScore}/100)`);
       } catch (error) {
         console.error(`[VIDEO-PRO] Error processing article #${article.id}:`, error.message);
       }
