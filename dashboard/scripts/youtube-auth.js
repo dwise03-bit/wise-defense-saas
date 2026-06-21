@@ -19,8 +19,9 @@ async function getAuthCode() {
   }
 
   const secrets = JSON.parse(fs.readFileSync(CLIENT_SECRETS_FILE, "utf-8"));
-  const { client_id, client_secret, redirect_uris } = secrets.installed;
-  const redirectUri = redirect_uris[0];
+  const secretsData = secrets.installed || secrets.web;
+  const { client_id, client_secret, redirect_uris } = secretsData;
+  const redirectUri = redirect_uris ? redirect_uris[0] : "http://localhost:3000";
 
   // Generate authorization URL
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
