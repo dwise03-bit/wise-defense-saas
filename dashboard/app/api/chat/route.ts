@@ -223,52 +223,188 @@ function detectCategory(message: string): { category: string; subcategory?: stri
 }
 
 /**
+ * Detect frustration sentiment
+ */
+function detectFrustration(message: string): { isFrustrated: boolean; score: number } {
+  const frustrated = message.toLowerCase();
+
+  const frustrationKeywords = [
+    'angry', 'frustrated', 'annoyed', 'upset', 'mad', 'hate', 'terrible', 'awful',
+    'broken', 'doesn\'t work', 'not working', 'error', 'problem', 'issue', 'help',
+    'urgent', 'asap', 'now', 'immediately', 'please help', 'stuck', 'confused',
+    'waste', 'wasted', 'never', 'always fails', 'can\'t', 'won\'t', 'charging wrong',
+    'refund', 'cancel', 'quit', 'leave', 'fed up', 'sick of', 'tired of'
+  ];
+
+  const allCapitalWords = message.split(' ').filter(w => /^[A-Z]{2,}$/.test(w)).length;
+  let score = 0;
+
+  // Check frustration keywords: +0.3 each
+  frustrationKeywords.forEach(kw => {
+    if (frustrated.includes(kw)) score += 0.3;
+  });
+
+  // All caps intensity: +0.2 per word (max 0.6)
+  if (allCapitalWords > 0) {
+    score += Math.min(0.6, allCapitalWords * 0.2);
+  }
+
+  // Exclamation marks intensity: +0.1 per ! (max 0.5)
+  const exclamations = (message.match(/!/g) || []).length;
+  if (exclamations > 0) {
+    score += Math.min(0.5, exclamations * 0.1);
+  }
+
+  // Question marks (repeated): +0.1 per extra ?
+  const questions = (message.match(/\?/g) || []).length;
+  if (questions > 2) {
+    score += Math.min(0.3, (questions - 2) * 0.1);
+  }
+
+  score = Math.min(1.0, score);
+
+  return {
+    isFrustrated: score >= 0.5,
+    score: parseFloat(score.toFixed(2))
+  };
+}
+
+/**
  * Call Hermes AI agent for complex questions
  */
 async function callHermesAgent(userMessage: string): Promise<string | null> {
+  const ollama_url = process.env.OLLAMA_URL || 'http://localhost:11434';
+  const model = process.env.OLLAMA_MODEL || 'mistral';
+
   try {
-    // Try Hermes backend first
-    const response = await fetch('http://hermes-backend:3100/chat', {
+    console.log(`[CHAT] Calling Hermes (${model}) at ${ollama_url}`);
+
+    // System prompt for Wise Defense customer service
+    const systemPrompt = `You are Hermes, a helpful AI assistant for Wise Defense LLC - a premium firearms training academy.
+You provide accurate, friendly, and professional customer service about:
+- Training courses (Beginner, Concealed Carry, Competitive Shooting)
+- Membership tiers (Starter $99, Pro $199, VIP $399)
+- Booking and scheduling sessions
+- Course requirements and prerequisites
+- Payment and refund policies
+- Support contact information
+
+Be concise (1-2 short paragraphs), friendly, and professional. If asked about something outside your scope, offer to connect them with support@wisedefense.com or 1-800-WISE-DEF.`;
+
+    const response = await fetch(`${ollama_url}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: userMessage,
-        context: 'wise-defense-customer-service'
-      })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('[CHAT] Hermes response:', data);
-      return data.message || data.response || null;
-    }
-  } catch (error) {
-    console.log('[CHAT] Hermes backend not available');
-  }
-
-  // Fallback to Ollama
-  try {
-    const response = await fetch('http://ollama:11434/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: process.env.OLLAMA_MODEL || 'mistral',
-        prompt: `You are a helpful Wise Defense customer service AI. Answer this question about firearms training, courses, or our services:\n\n${userMessage}`,
+        model,
+        prompt: `System: ${systemPrompt}\n\nUser: ${userMessage}\n\nAssistant:`,
         stream: false,
-        temperature: 0.7
-      })
+        temperature: 0.7,
+        top_p: 0.9,
+        num_predict: 200
+      }),
+      signal: AbortSignal.timeout(30000) // 30 second timeout
     });
 
     if (!response.ok) {
-      console.error('[CHAT] Ollama error:', response.statusText);
+      console.error(`[CHAT] Ollama error: ${response.status} ${response.statusText}`);
       return null;
     }
 
     const data = await response.json();
-    return data.response || null;
-  } catch (error) {
-    console.error('[CHAT] Ollama call failed');
+    const answer = data.response?.trim() || null;
+
+    if (answer) {
+      console.log(`[CHAT] ✅ Hermes response received (${answer.length} chars)`);
+    }
+
+    return answer;
+  } catch (error: any) {
+    console.error(`[CHAT] Hermes/Ollama error: ${error.message}`);
     return null;
+  }
+}
+
+/**
+ * Send Discord alert for chat activity
+ */
+async function sendDiscordAlert(type: 'escalation' | 'new_conversation' | 'quick_reply' | 'high_priority', data: any) {
+  try {
+    const webhookUrl = process.env.DISCORD_ALERTS_WEBHOOK_URL || process.env.DISCORD_NEWS_WEBHOOK_URL;
+    if (!webhookUrl) {
+      console.log('[CHAT] No Discord webhook configured');
+      return;
+    }
+
+    let embed: any = {};
+
+    if (type === 'escalation') {
+      embed = {
+        title: '🚨 Chat Escalation Alert',
+        description: `User showing signs of frustration`,
+        color: 16711680, // Red
+        fields: [
+          { name: 'User ID', value: data.userId, inline: true },
+          { name: 'Frustration Score', value: `${(data.frustrationScore * 100).toFixed(0)}%`, inline: true },
+          { name: 'Conversation ID', value: data.conversationId, inline: false },
+          { name: 'Last Message', value: data.lastMessage.substring(0, 200), inline: false },
+        ],
+      };
+    } else if (type === 'new_conversation') {
+      embed = {
+        title: '💬 New Chat Conversation',
+        description: `User started a new chat session`,
+        color: 6737151, // Blue
+        fields: [
+          { name: 'User ID', value: data.userId, inline: true },
+          { name: 'Channel', value: data.channel || 'web', inline: true },
+          { name: 'Conversation ID', value: data.conversationId, inline: false },
+          { name: 'Time', value: new Date().toLocaleTimeString(), inline: false },
+        ],
+      };
+    } else if (type === 'quick_reply') {
+      const actionEmoji = {
+        booking: '📅',
+        pricing: '💰',
+        courses: '📖',
+        contact: '☎️',
+        escalate: '👤',
+      };
+      embed = {
+        title: `${actionEmoji[data.action] || '⚡'} Quick Reply Action`,
+        description: `User clicked a quick reply button`,
+        color: 15105570, // Orange
+        fields: [
+          { name: 'Action', value: data.action, inline: true },
+          { name: 'Label', value: data.label, inline: true },
+          { name: 'User ID', value: data.userId, inline: false },
+          { name: 'Conversation ID', value: data.conversationId, inline: false },
+        ],
+      };
+    } else if (type === 'high_priority') {
+      embed = {
+        title: '⭐ High Priority Message',
+        description: `User asked about something important`,
+        color: 16776960, // Yellow
+        fields: [
+          { name: 'Topic', value: data.topic, inline: true },
+          { name: 'User ID', value: data.userId, inline: true },
+          { name: 'Message', value: data.message.substring(0, 150), inline: false },
+          { name: 'Conversation ID', value: data.conversationId, inline: false },
+        ],
+      };
+    }
+
+    embed.timestamp = new Date().toISOString();
+
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+
+    console.log(`[CHAT] ${type} alert sent to Discord`);
+  } catch (error) {
+    console.error('[CHAT] Failed to send Discord alert:', error);
   }
 }
 
@@ -294,7 +430,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
+    // STEP 0: Detect frustration
+    const frustration = detectFrustration(message);
+    console.log(`[CHAT] Frustration score: ${frustration.score} (${frustration.isFrustrated ? 'FRUSTRATED' : 'ok'})`);
+
     let convId = conversationId;
+    let isNewConversation = false;
+
     if (!convId) {
       try {
         const convResult = await query(
@@ -304,9 +446,57 @@ export async function POST(request: NextRequest) {
           [userId, channel, 'active']
         );
         convId = convResult.rows[0].id;
+        isNewConversation = true;
+
+        // Alert Discord for new conversation
+        await sendDiscordAlert('new_conversation', {
+          userId,
+          channel,
+          conversationId: convId
+        });
       } catch (dbError) {
         convId = Date.now().toString();
       }
+    }
+
+    // Check frustration history in this conversation
+    let frustrationCount = 0;
+    try {
+      const historyResult = await query(
+        `SELECT COUNT(*) as count FROM conversation_messages
+         WHERE conversation_id = $1 AND frustration_score >= 0.5`,
+        [convId]
+      );
+      frustrationCount = parseInt(historyResult.rows[0].count) || 0;
+    } catch (dbError) {
+      console.log('[CHAT] Could not check frustration history');
+    }
+
+    // Detect high-priority topics
+    const highPriorityTopics = ['booking', 'payment', 'refund', 'urgent', 'help', 'emergency'];
+    const isHighPriority = highPriorityTopics.some(topic => message.toLowerCase().includes(topic));
+
+    // Auto-escalate if 2+ frustrated messages
+    let shouldEscalate = frustrationCount >= 1 && frustration.isFrustrated;
+    if (shouldEscalate) {
+      console.log('[CHAT] 🚨 AUTO-ESCALATING - User frustrated multiple times');
+      await sendDiscordAlert('escalation', {
+        userId,
+        conversationId: convId,
+        frustrationScore: frustration.score,
+        lastMessage: message
+      });
+    }
+
+    // Alert on high-priority topics
+    if (isHighPriority && !isNewConversation) {
+      const topic = highPriorityTopics.find(t => message.toLowerCase().includes(t)) || 'general';
+      await sendDiscordAlert('high_priority', {
+        userId,
+        conversationId: convId,
+        topic,
+        message
+      });
     }
 
     let assistantMessage = '';
@@ -344,9 +534,9 @@ export async function POST(request: NextRequest) {
     // Save messages (optional)
     try {
       await query(
-        `INSERT INTO conversation_messages (conversation_id, sender, content, created_at)
-         VALUES ($1, $2, $3, NOW())`,
-        [convId, 'user', message]
+        `INSERT INTO conversation_messages (conversation_id, sender, content, frustration_score, created_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [convId, 'user', message, frustration.score]
       );
 
       await query(
@@ -358,12 +548,49 @@ export async function POST(request: NextRequest) {
       console.log('[CHAT] Database logging skipped');
     }
 
+    // Generate contextual quick replies based on message
+    let quickReplies: any[] = [];
+
+    // If escalating, add "Talk to Human" button
+    if (shouldEscalate) {
+      assistantMessage = `I understand you're having trouble. Let me connect you with our support team right away. They'll get back to you within 2 hours.\n\n${assistantMessage}`;
+      quickReplies = [
+        { label: '👤 Talk to Human Now', action: 'escalate', icon: '👤' },
+        { label: '❓ Other Question', action: 'reset', icon: '❓' },
+      ];
+    } else if (source === 'knowledge-base' || source === 'hermes-agent') {
+      if (message.toLowerCase().includes('price') || message.toLowerCase().includes('cost')) {
+        quickReplies = [
+          { label: '📅 Book Now', action: 'booking', icon: '📅' },
+          { label: '❓ Other Questions', action: 'reset', icon: '❓' },
+        ];
+      } else if (message.toLowerCase().includes('book') || message.toLowerCase().includes('schedule')) {
+        quickReplies = [
+          { label: '💰 View Pricing', action: 'pricing', icon: '💰' },
+          { label: '❓ More Info', action: 'reset', icon: '❓' },
+        ];
+      } else if (message.toLowerCase().includes('course')) {
+        quickReplies = [
+          { label: '💰 See Pricing', action: 'pricing', icon: '💰' },
+          { label: '📅 Book Session', action: 'booking', icon: '📅' },
+        ];
+      } else {
+        quickReplies = [
+          { label: '📅 Book a Session', action: 'booking', icon: '📅' },
+          { label: '💰 View Pricing', action: 'pricing', icon: '💰' },
+          { label: '❓ Ask Another Q', action: 'reset', icon: '❓' },
+        ];
+      }
+    }
+
     return NextResponse.json({
       success: true,
       conversationId: convId,
       message: assistantMessage,
       source,
-      escalated: false
+      escalated: shouldEscalate,
+      frustrationScore: frustration.score,
+      quickReplies
     });
   } catch (error) {
     console.error('[CHAT] Error:', error);
