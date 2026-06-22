@@ -61,27 +61,68 @@ function calculateRelevanceScore(title, content, source) {
     'court',
   ];
 
+  // LOCAL GREENSBORO CRIME KEYWORDS - Boost for local news
+  const LOCAL_KEYWORDS = [
+    'greensboro',
+    'triad',
+    'guilford county',
+    'high point',
+    'jamestown nc',
+  ];
+
+  const LOCAL_CRIME_KEYWORDS = [
+    'armed robbery',
+    'shooting',
+    'assault',
+    'crime',
+    'incident',
+    'arrest',
+    'suspect',
+    'police',
+    'officer',
+    'gpd',
+  ];
+
   let score = 0;
   const fullText = `${title} ${content}`.toLowerCase();
+  const titleLower = title.toLowerCase();
 
-  // Primary keywords: +0.4 each
+  // PRIMARY keywords: +0.4 each
   PRIMARY_KEYWORDS.forEach((kw) => {
     if (fullText.includes(kw)) score += 0.4;
   });
 
-  // Secondary keywords: +0.2 each
+  // SECONDARY keywords: +0.2 each
   SECONDARY_KEYWORDS.forEach((kw) => {
     if (fullText.includes(kw)) score += 0.2;
   });
 
-  // Tertiary keywords: +0.05 each
+  // TERTIARY keywords: +0.05 each
   TERTIARY_KEYWORDS.forEach((kw) => {
     if (fullText.includes(kw)) score += 0.05;
   });
 
+  // LOCAL GREENSBORO + CRIME COMBINATION: +0.5 (high priority for local incidents!)
+  const hasLocalKeyword = LOCAL_KEYWORDS.some((kw) => fullText.includes(kw));
+  const hasLocalCrimeKeyword = LOCAL_CRIME_KEYWORDS.some((kw) => fullText.includes(kw));
+
+  if (hasLocalKeyword && hasLocalCrimeKeyword) {
+    score += 0.5;
+    console.log(`[REVIEWER] 🚨 LOCAL CRIME BOOST: ${titleLower.substring(0, 50)}`);
+  }
+
+  // LOCAL ONLY (non-crime): +0.2
+  if (hasLocalKeyword && !hasLocalCrimeKeyword) {
+    score += 0.2;
+  }
+
   // Title bonus
-  const titleLower = title.toLowerCase();
   if (PRIMARY_KEYWORDS.some((kw) => titleLower.includes(kw))) {
+    score += 0.15;
+  }
+
+  // Title bonus for local crime
+  if (hasLocalKeyword && hasLocalCrimeKeyword) {
     score += 0.15;
   }
 
@@ -90,7 +131,7 @@ function calculateRelevanceScore(title, content, source) {
 
   // Source credibility boost
   if (source) {
-    const credibleSources = ['reuters', 'ap news', 'npr', 'politico', 'nytimes', 'washingtonpost'];
+    const credibleSources = ['reuters', 'ap news', 'npr', 'politico', 'nytimes', 'washingtonpost', 'wfmy', 'wxii', 'greensboro'];
     if (credibleSources.some((s) => source.toLowerCase().includes(s))) {
       score = Math.min(1.0, score + 0.1);
     }
@@ -256,8 +297,23 @@ async function reviewArticle(articleId, article) {
     const implications = extractImplications(article.title, article.content, sentimentResult.sentiment);
 
     const recommendedForSocial = relevanceScore >= 0.6 && sentimentResult.score !== 0;
+
+    // Priority assignment: local Greensboro crime gets high priority at lower score threshold
     let priorityLevel = 'low';
-    if (relevanceScore >= 0.8) {
+    const isLocalGreensboroNews = (
+      (article.title.toLowerCase().includes('greensboro') ||
+       article.title.toLowerCase().includes('triad') ||
+       article.title.toLowerCase().includes('guilford')) &&
+      (article.title.toLowerCase().includes('crime') ||
+       article.title.toLowerCase().includes('arrest') ||
+       article.title.toLowerCase().includes('police') ||
+       article.title.toLowerCase().includes('armed') ||
+       article.title.toLowerCase().includes('assault'))
+    );
+
+    if (isLocalGreensboroNews && relevanceScore >= 0.65) {
+      priorityLevel = 'high';
+    } else if (relevanceScore >= 0.8) {
       priorityLevel = 'high';
     } else if (relevanceScore >= 0.6) {
       priorityLevel = 'medium';
