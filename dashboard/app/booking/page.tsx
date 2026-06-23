@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import BookingCalendar from '@/components/BookingCalendar';
+import { Calendar, Clock, User } from 'lucide-react';
 
 interface AvailableSession {
   id: number;
@@ -34,45 +35,99 @@ export default function BookingPage() {
     setBooked([...booked, session.id]);
   };
 
-  if (!token) return <div className="min-h-screen bg-black flex items-center justify-center text-gray">Loading...</div>;
+  if (!token) return <div className="min-h-screen bg-white flex items-center justify-center text-gray-600">Loading...</div>;
 
   return (
-    <main className="bg-black min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black border-b border-gray-800 py-4 px-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <Image src="/logo-w2.png" alt="Wise Defense" width={160} height={50} className="h-12 w-auto" />
+    <main className="bg-white min-h-screen">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-gray-900">
+            Wise Defense
           </Link>
-          <nav className="flex gap-6">
-            <Link href="/" className="text-gray hover:text-neon-red transition-glow">Home</Link>
-            <Link href="/pricing" className="text-gray hover:text-neon-red transition-glow">Pricing</Link>
-            <Link href="/community" className="text-gray hover:text-neon-red transition-glow">Community</Link>
-            <Link href="/leaderboards" className="text-gray hover:text-neon-red transition-glow">Leaderboards</Link>
-          </nav>
+          <div className="flex items-center gap-8">
+            <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm">
+              Home
+            </Link>
+            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 text-sm">
+              Pricing
+            </Link>
+            <Link href="/community" className="text-gray-600 hover:text-gray-900 text-sm">
+              Community
+            </Link>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Page Title */}
-      <section className="bg-black py-8 px-4">
+      {/* Header */}
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50 border-b border-gray-200">
         <div className="max-w-6xl mx-auto">
-          <h1 className="section-heading mb-2">Book Your Training Session</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3 flex items-center gap-3">
+            <Calendar className="w-10 h-10 text-red-600" />
+            Book Your Training Session
+          </h1>
+          <p className="text-lg text-gray-600">
+            Schedule a 1-on-1 session with your instructor at a time that works for you.
+          </p>
         </div>
       </section>
 
       {/* Booking Calendar */}
-      <section className="bg-black py-12 px-4">
+      <section className="py-24 px-6 bg-white">
         <div className="max-w-2xl mx-auto">
           <div className="card">
             <BookingCalendar onSessionBooked={handleSessionBooked} />
           </div>
 
           {booked.length > 0 && (
-            <div className="mt-8 bg-secondary-black border-l-4 border-neon-red p-6 rounded-sm">
-              <h2 className="heading-silver text-lg mb-2">Sessions Booked!</h2>
-              <p className="text-gray">You have {booked.length} session(s) scheduled.</p>
+            <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-3 h-3 rounded-full bg-green-600"></div>
+                <h3 className="text-lg font-semibold text-green-900">Sessions Booked!</h3>
+              </div>
+              <p className="text-green-700">
+                You have {booked.length} training session{booked.length !== 1 ? 's' : ''} scheduled. Check your email for confirmation details.
+              </p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* What to Expect */}
+      <section className="py-24 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-16 text-center">
+            What to Expect
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
+                <Clock className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Flexible Scheduling</h3>
+              <p className="text-gray-600">
+                Book sessions around your schedule with flexible time slots available throughout the week.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
+                <User className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">1-on-1 Coaching</h3>
+              <p className="text-gray-600">
+                Personalized instruction tailored to your skill level, goals, and learning pace.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Progress Tracking</h3>
+              <p className="text-gray-600">
+                Track your progress and build a personalized training plan based on your results.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </main>

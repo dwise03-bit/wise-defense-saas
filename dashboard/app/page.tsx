@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import SocialProof from '@/components/SocialProof';
-import { TierDiscoveryModal } from '@/components/TierDiscovery/TierDiscoveryModal';
+import { ChevronRight, Shield, Users, TrendingUp, Award } from 'lucide-react';
 
 export default function Home() {
   const [showTierModal, setShowTierModal] = useState(false);
@@ -17,146 +16,233 @@ export default function Home() {
   };
 
   return (
-    <main className="bg-black min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black border-b border-gray-800 py-4 px-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <Image src="/logo-w2.png" alt="Wise Defense" width={160} height={50} className="h-12 w-auto" priority />
+    <main className="bg-white min-h-screen">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-gray-900">
+            Wise Defense
           </Link>
-          <nav className="flex gap-6">
-            <Link href="/pricing" className="text-gray hover:text-neon-red transition-glow">Pricing</Link>
-            <Link href="/booking" className="text-gray hover:text-neon-red transition-glow">Book</Link>
-            <Link href="/community" className="text-gray hover:text-neon-red transition-glow">Community</Link>
-            <Link href="/leaderboards" className="text-gray hover:text-neon-red transition-glow">Leaderboards</Link>
-            <Link href="/auth/login" className="text-gray hover:text-neon-red transition-glow">Log In</Link>
-          </nav>
+          <div className="flex items-center gap-8">
+            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 text-sm">
+              Pricing
+            </Link>
+            <Link href="/booking" className="text-gray-600 hover:text-gray-900 text-sm">
+              Book
+            </Link>
+            <Link href="/community" className="text-gray-600 hover:text-gray-900 text-sm">
+              Community
+            </Link>
+            <Link href="/auth/login" className="btn-primary">
+              Sign In
+            </Link>
+          </div>
         </div>
-      </header>
+      </nav>
 
       {/* Hero Section */}
-      <section className="relative bg-black py-24 px-4 overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <Image src="/hero-vr.webp" alt="VR Training" fill className="object-cover" priority />
-        </div>
-        <div className="max-w-6xl mx-auto text-center relative z-10">
-          <h1 className="heading-silver text-6xl mb-6">
+      <section className="relative bg-gradient-to-b from-white to-gray-50 py-24 px-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
             Premium Firearms Training
           </h1>
-          <div className="flex justify-center mb-6">
-            <Image src="/badge.png" alt="NRA Certified" width={120} height={120} className="h-20 w-auto" />
-          </div>
-          <p className="text-2xl font-semibold text-white mb-2">
-            NRA Certified Instructor
+          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Learn from an NRA-certified instructor. Personalized coaching designed to elevate your skills, confidence, and safety.
           </p>
-          <p className="text-lg text-gray-muted max-w-2xl mx-auto mb-12">
-            Professional-grade firearms training with personalized coaching tailored to your goals
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Link href="/auth/signup">
-              <button className="btn-primary">Start Training</button>
+              <button className="btn-primary text-base px-8 py-3">
+                Start Training
+              </button>
             </Link>
             <button
               onClick={() => setShowTierModal(true)}
-              className="btn-secondary"
+              className="btn-secondary text-base px-8 py-3"
             >
-              Find Your Tier
+              Explore Plans
             </button>
           </div>
+
+          {/* Hero Image */}
+          <div className="relative w-full h-96 rounded-3xl overflow-hidden bg-gray-100 shadow-lg">
+            <Image
+              src="/hero-vr.webp"
+              alt="Premium Training"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
         </div>
       </section>
 
-      {/* Credentials Section */}
-      <section className="bg-black py-20 px-4">
+      {/* Features Grid */}
+      <section className="py-24 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
           <h2 className="section-heading text-center mb-16">
-            Why Choose Wise Defense?
+            Why Wise Defense
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-20">
-            {/* Left: Founder Image */}
-            <div className="relative">
-              <Image src="/founder.webp" alt="Instructor" width={400} height={500} className="rounded-sm shadow-lg" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                  <Award className="w-8 h-8 text-red-600" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                NRA Certified
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Learn from a professional instructor with verified credentials and years of real-world experience.
+              </p>
             </div>
-            {/* Right: Credentials */}
-            <div className="space-y-6">
-              <div className="card">
-                <h3 className="heading-silver text-xl mb-2">NRA Certified</h3>
-                <p className="text-gray">
-                  Professional-level instruction with verified NRA credentials and years of real-world experience
-                </p>
-              </div>
 
-              <div className="card">
-                <h3 className="heading-silver text-xl mb-2">Personalized Coaching</h3>
-                <p className="text-gray">
-                  Customized learning paths tailored to your goals, skill level, and training objectives
-                </p>
+            {/* Feature 2 */}
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                  <Users className="w-8 h-8 text-red-600" />
+                </div>
               </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                Personalized Coaching
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Customized training paths tailored to your goals, skill level, and learning pace.
+              </p>
+            </div>
 
-              <div className="card">
-                <h3 className="heading-silver text-xl mb-2">Results-Focused Training</h3>
-                <p className="text-gray">
-                  Proven track record of student success, confidence, and skill mastery
-                </p>
+            {/* Feature 3 */}
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+                  <TrendingUp className="w-8 h-8 text-red-600" />
+                </div>
               </div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-900">
+                Proven Results
+              </h3>
+              <p className="text-gray-600 leading-relaxed">
+                Track your progress with measurable milestones and join hundreds of successful students.
+              </p>
             </div>
           </div>
         </div>
       </section>
-
-      {/* Social Proof */}
-      <SocialProof />
 
       {/* Training Paths */}
-      <section className="bg-black py-20 px-4">
+      <section className="py-24 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="section-heading text-center mb-16">Training Paths</h2>
+          <h2 className="section-heading text-center mb-16">
+            Training Paths
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="card">
-              <h3 className="heading-silver text-2xl mb-4">Beginner Fundamentals</h3>
-              <p className="text-gray mb-6">
-                Start your journey safely with core concepts, safety protocols, and foundational skills
+            {/* Path 1 */}
+            <div className="card group hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center mb-6 group-hover:bg-red-100">
+                <Shield className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-semibold mb-3 text-gray-900">
+                Beginner Fundamentals
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Master the essentials with core concepts, safety protocols, and foundational techniques.
               </p>
-              <p className="text-sm font-semibold text-neon-red">4-6 weeks | 8 sessions</p>
+              <p className="text-sm text-gray-500 font-medium">4-6 weeks • 8 sessions</p>
             </div>
 
-            <div className="card">
-              <h3 className="heading-silver text-2xl mb-4">Concealed Carry</h3>
-              <p className="text-gray mb-6">
-                Master self-defense techniques, carry methods, and tactical scenarios for real-world readiness
+            {/* Path 2 */}
+            <div className="card group hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center mb-6 group-hover:bg-red-100">
+                <Users className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-semibold mb-3 text-gray-900">
+                Concealed Carry
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Learn advanced techniques, carry methods, and real-world tactical scenarios.
               </p>
-              <p className="text-sm font-semibold text-neon-red">6-8 weeks | 12 sessions</p>
+              <p className="text-sm text-gray-500 font-medium">6-8 weeks • 12 sessions</p>
             </div>
 
-            <div className="card">
-              <h3 className="heading-silver text-2xl mb-4">Competitive Shooting</h3>
-              <p className="text-gray mb-6">
-                Develop advanced accuracy, speed, and competition-ready skills with expert coaching
+            {/* Path 3 */}
+            <div className="card group hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center mb-6 group-hover:bg-red-100">
+                <TrendingUp className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-semibold mb-3 text-gray-900">
+                Competitive Shooting
+              </h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Develop advanced accuracy, speed, and competition-ready skills with expert coaching.
               </p>
-              <p className="text-sm font-semibold text-neon-red">8-12 weeks | 16 sessions</p>
+              <p className="text-sm text-gray-500 font-medium">8-12 weeks • 16 sessions</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="bg-black py-20 px-4">
+      {/* CTA Section */}
+      <section className="py-24 px-6 bg-white">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="heading-silver text-4xl mb-6">Ready to Start Training?</h2>
-          <p className="text-gray mb-10">
-            Join hundreds of students who've transformed their skills and confidence with personalized coaching
+          <h2 className="section-heading mb-6">
+            Ready to Elevate Your Skills?
+          </h2>
+          <p className="text-xl text-gray-600 mb-12 leading-relaxed">
+            Join hundreds of students who've transformed their confidence and competence through personalized training.
           </p>
           <Link href="/auth/signup">
-            <button className="btn-primary">Get Started Today</button>
+            <button className="btn-primary text-lg px-10 py-4 inline-flex items-center gap-2">
+              Start Your Journey
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </Link>
         </div>
       </section>
 
-      <TierDiscoveryModal
-        isOpen={showTierModal}
-        onClose={() => setShowTierModal(false)}
-        onTierSelect={handleTierSelect}
-      />
+      {/* Footer */}
+      <footer className="bg-gray-50 border-t border-gray-200 py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">About</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/" className="hover:text-gray-900">Home</Link></li>
+                <li><Link href="/pricing" className="hover:text-gray-900">Pricing</Link></li>
+                <li><Link href="/community" className="hover:text-gray-900">Community</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Training</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><Link href="/booking" className="hover:text-gray-900">Book Session</Link></li>
+                <li><Link href="/leaderboards" className="hover:text-gray-900">Leaderboards</Link></li>
+                <li><Link href="/auth/login" className="hover:text-gray-900">Dashboard</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><a href="#" className="hover:text-gray-900">Privacy</a></li>
+                <li><a href="#" className="hover:text-gray-900">Terms</a></li>
+                <li><a href="#" className="hover:text-gray-900">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-4">Connect</h4>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li><a href="#" className="hover:text-gray-900">Discord</a></li>
+                <li><a href="#" className="hover:text-gray-900">Twitter</a></li>
+                <li><a href="#" className="hover:text-gray-900">Email</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 pt-8 text-center text-sm text-gray-500">
+            <p>&copy; 2026 Wise Defense LLC. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

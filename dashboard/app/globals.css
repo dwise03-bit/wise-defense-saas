@@ -1,15 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
-  --primary-black: #0a0a0a;
-  --secondary-black: #1a1a1a;
-  --neon-red: #ff1744;
-  --standard-red: #cc0000;
-  --silver: #c0c0c0;
-  --gray: #666666;
-  --cyan: #00d9ff;
+  /* Apple-inspired light palette */
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --card-bg: #ffffff;
+  --border: #e5e5e7;
+  --accent-red: #ff1744;
+  --accent-red-dark: #e60012;
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --text-tertiary: #a1a1a6;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.1);
 }
 
 @theme inline {
@@ -19,92 +23,96 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ffffff;
-  }
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
 }
 
-/* Glow effect utility */
-.glow-red {
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
+a {
+  color: var(--accent-red);
+  text-decoration: none;
+  transition: opacity 200ms ease;
 }
 
-.glow-red-intense {
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.7);
+a:hover {
+  opacity: 0.7;
 }
 
 /* Smooth transitions */
 .transition-glow {
-  transition: box-shadow 200ms ease-in-out, border-color 200ms ease-in-out;
-}
-
-/* Primary Action Button */
-.btn-primary {
-  background-color: #0a0a0a;
-  border: 2px solid #ff1744;
-  color: #ffffff;
-  padding: 1rem 2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-radius: 0.125rem;
-  cursor: pointer;
   transition: all 200ms ease-in-out;
 }
 
-.btn-primary:hover {
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
-}
-
-.btn-primary:focus {
-  border-width: 3px;
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
-  outline: none;
-}
-
-/* Secondary Action Button */
-.btn-secondary {
-  background-color: #ff1744;
-  color: #0a0a0a;
-  padding: 1rem 2rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-radius: 0.125rem;
+/* Primary Button - Apple Style */
+.btn-primary {
+  background-color: var(--accent-red);
+  color: #ffffff;
+  padding: 0.75rem 1.75rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+  border-radius: 980px;
   border: none;
+  cursor: pointer;
+  transition: all 200ms ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-red-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--accent-red);
+  padding: 0.75rem 1.75rem;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border: 1.5px solid var(--border);
+  border-radius: 980px;
   cursor: pointer;
   transition: all 200ms ease-in-out;
 }
 
 .btn-secondary:hover {
-  background-color: #cc0000;
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
-}
-
-.btn-secondary:focus {
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6);
-  outline: none;
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Card Component */
 .card {
-  background-color: #1a1a1a;
-  border-left: 4px solid #ff1744;
-  padding: 1.5rem;
-  border-radius: 0.125rem;
-  transition: box-shadow 200ms ease-in-out;
+  background-color: var(--card-bg);
+  border-radius: 18px;
+  padding: 2rem;
+  transition: all 200ms ease-in-out;
+  border: 1px solid var(--border);
 }
 
 .card:hover {
-  box-shadow: 0 0 15px rgba(255, 23, 68, 0.4);
+  box-shadow: var(--shadow-md);
+  border-color: var(--text-tertiary);
 }
 
 /* Form Input */
@@ -114,12 +122,13 @@ input[type="password"],
 input[type="date"],
 select,
 textarea {
-  background-color: #1a1a1a;
-  border: 2px solid #444444;
-  color: #ffffff;
-  padding: 0.75rem 1rem;
-  border-radius: 0.125rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
   font-family: inherit;
+  font-size: 1rem;
   transition: all 200ms ease-in-out;
 }
 
@@ -127,8 +136,7 @@ input[type="text"]::placeholder,
 input[type="email"]::placeholder,
 input[type="password"]::placeholder,
 textarea::placeholder {
-  color: #666666;
-  opacity: 0.6;
+  color: var(--text-tertiary);
 }
 
 input[type="text"]:focus,
@@ -137,34 +145,49 @@ input[type="password"]:focus,
 input[type="date"]:focus,
 select:focus,
 textarea:focus {
-  border-color: #ff1744;
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.4);
   outline: none;
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 3px rgba(255, 23, 68, 0.1);
 }
 
 /* Section Heading */
 .section-heading {
-  color: #c0c0c0;
-  font-size: 1.875rem;
-  font-weight: bold;
-  border-bottom: 2px solid #ff1744;
-  padding-bottom: 0.5rem;
-  margin-bottom: 3rem;
+  color: var(--text-primary);
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
 }
 
 /* Metallic Heading */
 .heading-silver {
-  color: #c0c0c0;
-  font-weight: bold;
-  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* Body Text */
 .text-gray {
-  color: #666666;
+  color: var(--text-secondary);
 }
 
 .text-gray-muted {
-  color: #666666;
-  opacity: 0.8;
+  color: var(--text-tertiary);
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2rem 0;
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.max-w-6xl {
+  max-width: 80rem;
 }
