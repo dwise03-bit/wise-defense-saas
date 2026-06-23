@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { User, Mail, Lock, ArrowRight, Check } from 'lucide-react';
 
-export function SignupForm() {
+function SignupFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tierParam = searchParams.get('tier');
@@ -234,6 +234,14 @@ export function SignupForm() {
         </div>
       </form>
     </div>
+  );
+}
+
+export function SignupForm() {
+  return (
+    <Suspense fallback={<div className="text-center py-12">Loading...</div>}>
+      <SignupFormContent />
+    </Suspense>
   );
 }
 
