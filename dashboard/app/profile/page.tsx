@@ -1,11 +1,8 @@
-/**
- * User Profile
- * Individual member stats and achievements
- */
-
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { User, Mail, Award, TrendingUp, Settings } from 'lucide-react';
 
 interface UserStats {
   id: number;
@@ -17,11 +14,6 @@ interface UserStats {
   streak_longest: number;
   engagement_count: number;
   last_active_date: string;
-  viral_posts_count: number;
-  total_engagement: number;
-  points_rank: number;
-  streak_rank: number;
-  viral_rank: number;
 }
 
 export default function ProfilePage() {
@@ -31,8 +23,6 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // In a real app, get current user ID from session/auth
-        // For now, fetch user with highest points as demo
         const response = await fetch('/api/profile?userId=1');
         const data = await response.json();
         setStats(data);
@@ -47,107 +37,142 @@ export default function ProfilePage() {
   }, []);
 
   if (loading) {
-    return <div className="text-center">Loading profile...</div>;
+    return (
+      <main className="bg-gray-50 min-h-screen">
+        <div className="flex items-center justify-center h-96">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </main>
+    );
   }
 
   if (!stats) {
-    return <div className="text-center text-red-600">Profile not found</div>;
+    return (
+      <main className="bg-gray-50 min-h-screen">
+        <div className="flex items-center justify-center h-96">
+          <p className="text-red-600">Profile not found</p>
+        </div>
+      </main>
+    );
   }
 
-  const getAchievements = () => {
-    const achievements = [];
-    if (stats.streak_current >= 30) achievements.push({ emoji: '🔥', label: 'Inferno', desc: '30-day streak' });
-    if (stats.streak_current >= 14) achievements.push({ emoji: '⚡', label: 'Momentum', desc: '2-week streak' });
-    if (stats.total_points >= 500) achievements.push({ emoji: '💰', label: 'High Roller', desc: '500+ points' });
-    if (stats.viral_posts_count >= 5) achievements.push({ emoji: '📱', label: 'Viral Master', desc: '5 viral posts' });
-    if (stats.engagement_count >= 50) achievements.push({ emoji: '🎯', label: 'Engaged', desc: '50+ actions' });
-    return achievements;
-  };
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="bg-gray-900 p-8 rounded-lg border border-red-600 border-opacity-30 mb-8">
-          <h1 className="text-4xl font-bold mb-2">{stats.first_name}</h1>
-          <p className="text-gray-400 mb-4">{stats.email}</p>
-          <span className={`px-3 py-1 rounded text-sm font-semibold ${
-            stats.tier === 'enterprise' ? 'bg-purple-600' :
-            stats.tier === 'pro' ? 'bg-blue-600' :
-            'bg-gray-600'
-          }`}>
-            {stats.tier.toUpperCase()} TIER
-          </span>
+    <main className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-gray-900">
+            Wise Defense
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+              Dashboard
+            </Link>
+            <Link href="/community" className="text-sm text-gray-600 hover:text-gray-900">
+              Community
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-2xl p-8 border border-gray-200 mb-8">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                  <User className="w-8 h-8 text-red-600" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">{stats.first_name}</h1>
+                  <p className="text-gray-600">{stats.email}</p>
+                </div>
+              </div>
+            </div>
+            <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+              stats.tier === 'vip'
+                ? 'bg-red-100 text-red-700'
+                : stats.tier === 'pro'
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}>
+              {stats.tier.toUpperCase()} Plan
+            </span>
+          </div>
+          <div className="border-t border-gray-200 pt-6">
+            <p className="text-sm text-gray-600">Last active: {new Date(stats.last_active_date).toLocaleDateString()}</p>
+          </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-900 p-4 rounded-lg border border-red-600 border-opacity-30">
-            <div className="text-3xl font-bold text-red-500">{stats.total_points}</div>
-            <div className="text-sm text-gray-400">Points</div>
-            <div className="text-xs text-gray-500">Rank #{stats.points_rank}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+            <div className="flex items-center gap-3 mb-3">
+              <TrendingUp className="w-5 h-5 text-red-600" />
+              <p className="text-sm text-gray-600">Total Points</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{stats.total_points}</p>
           </div>
 
-          <div className="bg-gray-900 p-4 rounded-lg border border-red-600 border-opacity-30">
-            <div className="text-3xl font-bold text-red-500">🔥 {stats.streak_current}</div>
-            <div className="text-sm text-gray-400">Current Streak</div>
-            <div className="text-xs text-gray-500">Best: {stats.streak_longest}</div>
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+            <div className="flex items-center gap-3 mb-3">
+              <Award className="w-5 h-5 text-red-600" />
+              <p className="text-sm text-gray-600">Current Streak</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{stats.streak_current}</p>
+            <p className="text-xs text-gray-500 mt-1">days</p>
           </div>
 
-          <div className="bg-gray-900 p-4 rounded-lg border border-red-600 border-opacity-30">
-            <div className="text-3xl font-bold text-red-500">{stats.engagement_count}</div>
-            <div className="text-sm text-gray-400">Engagements</div>
-            <div className="text-xs text-gray-500">Actions taken</div>
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+            <div className="flex items-center gap-3 mb-3">
+              <Award className="w-5 h-5 text-red-600" />
+              <p className="text-sm text-gray-600">Best Streak</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{stats.streak_longest}</p>
+            <p className="text-xs text-gray-500 mt-1">days</p>
           </div>
 
-          <div className="bg-gray-900 p-4 rounded-lg border border-red-600 border-opacity-30">
-            <div className="text-3xl font-bold text-red-500">📱 {stats.viral_posts_count}</div>
-            <div className="text-sm text-gray-400">Viral Posts</div>
-            <div className="text-xs text-gray-500">{stats.total_engagement} reach</div>
+          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+            <div className="flex items-center gap-3 mb-3">
+              <TrendingUp className="w-5 h-5 text-red-600" />
+              <p className="text-sm text-gray-600">Engagements</p>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{stats.engagement_count}</p>
           </div>
         </div>
 
-        {/* Achievements */}
-        <div className="bg-gray-900 p-6 rounded-lg border border-red-600 border-opacity-30 mb-8">
-          <h2 className="text-xl font-semibold mb-4">🏅 Achievements</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {getAchievements().length > 0 ? (
-              getAchievements().map((achievement, idx) => (
-                <div key={idx} className="bg-gray-800 p-4 rounded text-center">
-                  <div className="text-3xl mb-2">{achievement.emoji}</div>
-                  <div className="font-semibold">{achievement.label}</div>
-                  <div className="text-xs text-gray-400">{achievement.desc}</div>
+        {/* Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="/dashboard">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-red-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-red-600" />
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-400">Keep engaging to unlock achievements!</p>
-            )}
-          </div>
-        </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Continue Training</p>
+                  <p className="text-sm text-gray-600">Return to your dashboard</p>
+                </div>
+              </div>
+            </div>
+          </Link>
 
-        {/* Activity */}
-        <div className="bg-gray-900 p-6 rounded-lg border border-red-600 border-opacity-30">
-          <h2 className="text-xl font-semibold mb-4">📊 Activity</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-gray-400">
-              <span>Last Active:</span>
-              <span>{new Date(stats.last_active_date).toLocaleDateString()}</span>
+          <Link href="/booking">
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-red-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Book Session</p>
+                  <p className="text-sm text-gray-600">Schedule your next training</p>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between text-gray-400">
-              <span>Points Rank:</span>
-              <span className="font-semibold">#{stats.points_rank}</span>
-            </div>
-            <div className="flex justify-between text-gray-400">
-              <span>Streak Rank:</span>
-              <span className="font-semibold">#{stats.streak_rank}</span>
-            </div>
-            <div className="flex justify-between text-gray-400">
-              <span>Viral Rank:</span>
-              <span className="font-semibold">#{stats.viral_rank}</span>
-            </div>
-          </div>
+          </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
