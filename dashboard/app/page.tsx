@@ -26,6 +26,9 @@ export default function Home() {
           </Link>
           <nav className="flex gap-6">
             <Link href="/pricing" className="text-gray hover:text-neon-red transition-glow">Pricing</Link>
+            <Link href="/booking" className="text-gray hover:text-neon-red transition-glow">Book</Link>
+            <Link href="/community" className="text-gray hover:text-neon-red transition-glow">Community</Link>
+            <Link href="/leaderboards" className="text-gray hover:text-neon-red transition-glow">Leaderboards</Link>
             <Link href="/auth/login" className="text-gray hover:text-neon-red transition-glow">Log In</Link>
           </nav>
         </div>

@@ -45,8 +45,10 @@ export default function BookingPage() {
             <Image src="/logo-w2.png" alt="Wise Defense" width={160} height={50} className="h-12 w-auto" />
           </Link>
           <nav className="flex gap-6">
-            <Link href="/dashboard" className="text-gray hover:text-neon-red transition-glow">Dashboard</Link>
+            <Link href="/" className="text-gray hover:text-neon-red transition-glow">Home</Link>
             <Link href="/pricing" className="text-gray hover:text-neon-red transition-glow">Pricing</Link>
+            <Link href="/community" className="text-gray hover:text-neon-red transition-glow">Community</Link>
+            <Link href="/leaderboards" className="text-gray hover:text-neon-red transition-glow">Leaderboards</Link>
           </nav>
         </div>
       </header>
