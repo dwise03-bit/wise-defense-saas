@@ -4,7 +4,7 @@ require('dotenv').config();
 const Orchestrator = require('./orchestrator');
 
 const orchestrator = new Orchestrator();
-const INTERVAL_MINUTES = parseInt(process.env.MONITORING_INTERVAL_MINUTES || '15');
+const INTERVAL_MINUTES = parseInt(process.env.MONITORING_INTERVAL_MINUTES || '480');
 const INTERVAL_MS = INTERVAL_MINUTES * 60 * 1000;
 
 console.log(`
