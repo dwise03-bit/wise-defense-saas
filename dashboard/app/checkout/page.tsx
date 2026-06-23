@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, AlertCircle, Loader } from 'lucide-react';
 
-function CheckoutContent() {
+function CheckoutContentInner() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'processing' | 'success' | 'cancelled' | 'error'>('processing');
   const [message, setMessage] = useState('Processing your payment...');
@@ -86,6 +86,14 @@ function CheckoutContent() {
         )}
       </div>
     </section>
+  );
+}
+
+function CheckoutContent() {
+  return (
+    <Suspense fallback={<div className="text-center py-20 text-gray-600">Loading...</div>}>
+      <CheckoutContentInner />
+    </Suspense>
   );
 }
 
