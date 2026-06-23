@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -97,9 +97,7 @@ export default function CheckoutPage() {
         </div>
       </header>
 
-      <Suspense fallback={<div className="text-center py-20 text-gray">Loading...</div>}>
-        <CheckoutContent />
-      </Suspense>
+      <CheckoutContent />
     </main>
   );
 }
