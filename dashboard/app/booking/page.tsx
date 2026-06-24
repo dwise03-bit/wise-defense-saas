@@ -36,21 +36,21 @@ export default function BookingPage() {
   };
 
   return (
-    <main className="bg-white min-h-screen">
+    <main className="bg-black min-h-screen">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
+      <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-gray-900">
+          <Link href="/" className="text-xl font-bold text-white">
             Wise Defense
           </Link>
           <div className="flex items-center gap-8">
-            <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm">
+            <Link href="/" className="text-gray-400 hover:text-white text-sm">
               Home
             </Link>
-            <Link href="/pricing" className="text-gray-600 hover:text-gray-900 text-sm">
+            <Link href="/pricing" className="text-gray-400 hover:text-white text-sm">
               Pricing
             </Link>
-            <Link href="/community" className="text-gray-600 hover:text-gray-900 text-sm">
+            <Link href="/community" className="text-gray-400 hover:text-white text-sm">
               Community
             </Link>
           </div>
@@ -58,20 +58,20 @@ export default function BookingPage() {
       </nav>
 
       {/* Header */}
-      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50 border-b border-gray-200">
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50 border-b border-gray-800">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3 flex items-center gap-3">
+          <h1 className="text-4xl font-bold text-white mb-3 flex items-center gap-3">
             <Calendar className="w-10 h-10 text-red-600" />
             Book Your Training Session
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-400">
             Schedule a 1-on-1 session with your instructor at a time that works for you.
           </p>
         </div>
       </section>
 
       {/* Booking Calendar */}
-      <section className="py-24 px-6 bg-white">
+      <section className="py-24 px-6 bg-black">
         <div className="max-w-2xl mx-auto">
           <div className="card">
             <BookingCalendar onSessionBooked={handleSessionBooked} />
@@ -92,9 +92,9 @@ export default function BookingPage() {
       </section>
 
       {/* What to Expect */}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className="py-24 px-6 bg-gray-900">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-16 text-center">
+          <h2 className="text-3xl font-bold text-white mb-16 text-center">
             What to Expect
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -102,8 +102,8 @@ export default function BookingPage() {
               <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
                 <Clock className="w-8 h-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Flexible Scheduling</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-white mb-3">Flexible Scheduling</h3>
+              <p className="text-gray-400">
                 Book sessions around your schedule with flexible time slots available throughout the week.
               </p>
             </div>
@@ -111,8 +111,8 @@ export default function BookingPage() {
               <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
                 <User className="w-8 h-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">1-on-1 Coaching</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-white mb-3">1-on-1 Coaching</h3>
+              <p className="text-gray-400">
                 Personalized instruction tailored to your skill level, goals, and learning pace.
               </p>
             </div>
@@ -120,8 +120,8 @@ export default function BookingPage() {
               <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6">
                 <Calendar className="w-8 h-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Progress Tracking</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold text-white mb-3">Progress Tracking</h3>
+              <p className="text-gray-400">
                 Track your progress and build a personalized training plan based on your results.
               </p>
             </div>

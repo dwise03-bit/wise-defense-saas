@@ -38,9 +38,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="bg-gray-50 min-h-screen">
+      <main className="bg-gray-900 min-h-screen">
         <div className="flex items-center justify-center h-96">
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-400">Loading profile...</p>
         </div>
       </main>
     );
@@ -48,7 +48,7 @@ export default function ProfilePage() {
 
   if (!stats) {
     return (
-      <main className="bg-gray-50 min-h-screen">
+      <main className="bg-gray-900 min-h-screen">
         <div className="flex items-center justify-center h-96">
           <p className="text-red-600">Profile not found</p>
         </div>
@@ -57,18 +57,18 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="bg-gray-50 min-h-screen">
+    <main className="bg-gray-900 min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-black border-b border-gray-800 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-gray-900">
+          <Link href="/" className="text-xl font-bold text-white">
             Wise Defense
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white">
               Dashboard
             </Link>
-            <Link href="/community" className="text-sm text-gray-600 hover:text-gray-900">
+            <Link href="/community" className="text-sm text-gray-400 hover:text-white">
               Community
             </Link>
           </div>
@@ -77,7 +77,7 @@ export default function ProfilePage() {
 
       <div className="max-w-6xl mx-auto px-6 py-12">
         {/* Profile Header Card */}
-        <div className="bg-white rounded-2xl p-8 border border-gray-200 mb-8">
+        <div className="bg-black rounded-2xl p-8 border border-gray-800 mb-8">
           <div className="flex items-start justify-between mb-6">
             <div>
               <div className="flex items-center gap-4 mb-4">
@@ -85,8 +85,8 @@ export default function ProfilePage() {
                   <User className="w-8 h-8 text-red-600" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{stats.first_name}</h1>
-                  <p className="text-gray-600">{stats.email}</p>
+                  <h1 className="text-3xl font-bold text-white">{stats.first_name}</h1>
+                  <p className="text-gray-400">{stats.email}</p>
                 </div>
               </div>
             </div>
@@ -95,78 +95,78 @@ export default function ProfilePage() {
                 ? 'bg-red-100 text-red-700'
                 : stats.tier === 'pro'
                 ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-700'
+                : 'bg-gray-900 text-gray-300'
             }`}>
               {stats.tier.toUpperCase()} Plan
             </span>
           </div>
-          <div className="border-t border-gray-200 pt-6">
-            <p className="text-sm text-gray-600">Last active: {new Date(stats.last_active_date).toLocaleDateString()}</p>
+          <div className="border-t border-gray-800 pt-6">
+            <p className="text-sm text-gray-400">Last active: {new Date(stats.last_active_date).toLocaleDateString()}</p>
           </div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+          <div className="bg-black rounded-2xl p-6 border border-gray-800">
             <div className="flex items-center gap-3 mb-3">
               <TrendingUp className="w-5 h-5 text-red-600" />
-              <p className="text-sm text-gray-600">Total Points</p>
+              <p className="text-sm text-gray-400">Total Points</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.total_points}</p>
+            <p className="text-3xl font-bold text-white">{stats.total_points}</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+          <div className="bg-black rounded-2xl p-6 border border-gray-800">
             <div className="flex items-center gap-3 mb-3">
               <Award className="w-5 h-5 text-red-600" />
-              <p className="text-sm text-gray-600">Current Streak</p>
+              <p className="text-sm text-gray-400">Current Streak</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.streak_current}</p>
+            <p className="text-3xl font-bold text-white">{stats.streak_current}</p>
             <p className="text-xs text-gray-500 mt-1">days</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+          <div className="bg-black rounded-2xl p-6 border border-gray-800">
             <div className="flex items-center gap-3 mb-3">
               <Award className="w-5 h-5 text-red-600" />
-              <p className="text-sm text-gray-600">Best Streak</p>
+              <p className="text-sm text-gray-400">Best Streak</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.streak_longest}</p>
+            <p className="text-3xl font-bold text-white">{stats.streak_longest}</p>
             <p className="text-xs text-gray-500 mt-1">days</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
+          <div className="bg-black rounded-2xl p-6 border border-gray-800">
             <div className="flex items-center gap-3 mb-3">
               <TrendingUp className="w-5 h-5 text-red-600" />
-              <p className="text-sm text-gray-600">Engagements</p>
+              <p className="text-sm text-gray-400">Engagements</p>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.engagement_count}</p>
+            <p className="text-3xl font-bold text-white">{stats.engagement_count}</p>
           </div>
         </div>
 
         {/* Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="/dashboard">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-red-300 hover:shadow-md transition-all cursor-pointer">
+            <div className="bg-black rounded-2xl p-6 border border-gray-800 hover:border-red-300 hover:shadow-md transition-all cursor-pointer">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Continue Training</p>
-                  <p className="text-sm text-gray-600">Return to your dashboard</p>
+                  <p className="font-semibold text-white">Continue Training</p>
+                  <p className="text-sm text-gray-400">Return to your dashboard</p>
                 </div>
               </div>
             </div>
           </Link>
 
           <Link href="/booking">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-red-300 hover:shadow-md transition-all cursor-pointer">
+            <div className="bg-black rounded-2xl p-6 border border-gray-800 hover:border-red-300 hover:shadow-md transition-all cursor-pointer">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                   <Settings className="w-6 h-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900">Book Session</p>
-                  <p className="text-sm text-gray-600">Schedule your next training</p>
+                  <p className="font-semibold text-white">Book Session</p>
+                  <p className="text-sm text-gray-400">Schedule your next training</p>
                 </div>
               </div>
             </div>

@@ -73,10 +73,10 @@ function SignupFormContent() {
   return (
     <div className="w-full max-w-2xl">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <h1 className="text-4xl font-bold text-white mb-2">
           Start Your Training
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-400">
           Create your account and choose your training path.
         </p>
       </div>
@@ -90,10 +90,10 @@ function SignupFormContent() {
 
         {/* Account Information */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Account Information</h2>
+          <h2 className="text-lg font-semibold text-white">Account Information</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Full Name
             </label>
             <div className="relative">
@@ -104,14 +104,14 @@ function SignupFormContent() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:bg-black focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
                 placeholder="John Doe"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Email
             </label>
             <div className="relative">
@@ -122,14 +122,14 @@ function SignupFormContent() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:bg-black focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Password
             </label>
             <div className="relative">
@@ -140,7 +140,7 @@ function SignupFormContent() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:bg-black focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -148,18 +148,18 @@ function SignupFormContent() {
         </div>
 
         {/* Training Details */}
-        <div className="space-y-4 pt-8 border-t border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Training Details</h2>
+        <div className="space-y-4 pt-8 border-t border-gray-800">
+          <h2 className="text-lg font-semibold text-white">Training Details</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Experience Level
             </label>
             <select
               name="experience_level"
               value={formData.experience_level}
               onChange={handleChange}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:bg-black focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
             >
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
@@ -168,7 +168,7 @@ function SignupFormContent() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Training Goals
             </label>
             <textarea
@@ -176,15 +176,15 @@ function SignupFormContent() {
               value={formData.goals}
               onChange={handleChange}
               placeholder="What are your training goals?"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:bg-white focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
+              className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:bg-black focus:border-red-600 focus:ring-2 focus:ring-red-100 transition-all"
               rows={3}
             />
           </div>
         </div>
 
         {/* Tier Selection */}
-        <div className="space-y-4 pt-8 border-t border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Choose Your Plan</h2>
+        <div className="space-y-4 pt-8 border-t border-gray-800">
+          <h2 className="text-lg font-semibold text-white">Choose Your Plan</h2>
           <div className="grid grid-cols-3 gap-4">
             {tiers.map((tier) => (
               <label
@@ -192,7 +192,7 @@ function SignupFormContent() {
                 className={`relative flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
                   selectedTier === tier.id
                     ? 'border-red-600 bg-red-50'
-                    : 'border-gray-300 bg-white hover:border-gray-400'
+                    : 'border-gray-700 bg-black hover:border-gray-400'
                 }`}
               >
                 <input
@@ -203,10 +203,10 @@ function SignupFormContent() {
                   onChange={(e) => setSelectedTier(e.target.value)}
                   className="sr-only"
                 />
-                <div className="font-semibold text-gray-900 text-center">
+                <div className="font-semibold text-white text-center">
                   {tier.name}
                 </div>
-                <div className="text-sm text-gray-600">${tier.price}/mo</div>
+                <div className="text-sm text-gray-400">${tier.price}/mo</div>
                 {selectedTier === tier.id && (
                   <Check className="absolute top-2 right-2 w-5 h-5 text-red-600" />
                 )}
@@ -225,7 +225,7 @@ function SignupFormContent() {
         </button>
 
         <div className="text-center">
-          <p className="text-gray-600">
+          <p className="text-gray-400">
             Already have an account?{' '}
             <Link href="/auth/login" className="text-red-600 font-semibold hover:text-red-700">
               Sign in
@@ -247,10 +247,10 @@ export function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <main className="bg-white min-h-screen flex flex-col">
+    <main className="bg-black min-h-screen flex flex-col">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 px-6 h-16 flex items-center">
-        <Link href="/" className="text-xl font-bold text-gray-900">
+      <nav className="border-b border-gray-800 px-6 h-16 flex items-center">
+        <Link href="/" className="text-xl font-bold text-white">
           Wise Defense
         </Link>
       </nav>
