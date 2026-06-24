@@ -1,19 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  /* Apple-inspired light palette */
-  --background: #f5f5f7;
-  --foreground: #1d1d1f;
-  --card-bg: #ffffff;
-  --border: #e5e5e7;
+  /* Dark Premium Palette - Professional Tactical */
+  --background: #000000;
+  --background-secondary: #0f0f0f;
+  --background-tertiary: #1a1a1a;
+  --foreground: #ffffff;
+  --card-bg: #0f0f0f;
+  --border: #2a2a2a;
+  --border-light: #3a3a3a;
   --accent-red: #ff1744;
   --accent-red-dark: #e60012;
-  --text-primary: #1d1d1f;
-  --text-secondary: #86868b;
-  --text-tertiary: #a1a1a6;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.1);
+  --accent-red-light: #ff4757;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --shadow-sm: 0 1px 3px rgba(255, 23, 68, 0.1);
+  --shadow-md: 0 4px 12px rgba(255, 23, 68, 0.15);
+  --shadow-lg: 0 12px 28px rgba(255, 23, 68, 0.2);
+  --gradient-red: linear-gradient(135deg, #ff1744 0%, #e60012 100%);
+  --gradient-dark: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
 }
 
 @theme inline {
