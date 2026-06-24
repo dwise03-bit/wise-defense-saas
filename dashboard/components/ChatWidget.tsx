@@ -383,7 +383,7 @@ export default function ChatWidget() {
         className="fixed bottom-6 right-6 p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
         style={{
           backgroundColor: '#ff1744',
-          color: '#000000',
+          color: '#ffffff',
         }}
         aria-label="Open chat"
       >
