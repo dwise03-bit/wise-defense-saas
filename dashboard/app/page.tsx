@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Shield, Zap, Users, Award, CheckCircle } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Users, Award, CheckCircle, Sparkles } from 'lucide-react';
 
 export default function Home() {
   return (
-    <main className="bg-black min-h-screen">
+    <main style={{backgroundColor: '#000000'}} className="min-h-screen">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-gray-900">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
