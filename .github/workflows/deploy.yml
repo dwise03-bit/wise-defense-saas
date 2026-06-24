@@ -1,0 +1,66 @@
+name: Deploy Academy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_KEY: ${{ secrets.VPS_KEY }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$VPS_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Deploy
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'EOF'
+          set -e
+          cd /home/ubuntu/dev/wise-defense-saas/wise-defense-saas/wise-defense-saas
+
+          # Pull latest code
+          git fetch origin
+          git merge --ff-only origin/main
+
+          # Rebuild with cache bust
+          docker compose down dashboard
+          docker image rm wise-defense-saas-dashboard:latest 2>/dev/null || true
+          docker compose up -d --build dashboard
+
+          # Wait for health check (30s startup + 5s timeout × 3 retries)
+          sleep 40
+
+          # Verify deployment
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/)
+          TITLE=$(curl -s http://localhost:3001/ | grep -oiE '<title>[^<]*</title>' | head -1)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Health check failed: HTTP $HTTP_CODE"
+            docker compose logs --tail 50 dashboard
+            exit 1
+          fi
+
+          echo "✅ Deployment successful"
+          echo "HTTP Code: $HTTP_CODE"
+          echo "Page Title: $TITLE"
+          EOF
+
+      - name: Notify Slack (optional)
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Academy deployment: ${{ job.status }}'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        continue-on-error: true
