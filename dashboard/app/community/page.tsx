@@ -25,13 +25,9 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const t = localStorage.getItem('token');
-    if (!t) {
-      router.push('/auth/login');
-      return;
-    }
     setToken(t);
     fetchThreads();
-  }, [router]);
+  }, []);
 
   const fetchThreads = async () => {
     try {

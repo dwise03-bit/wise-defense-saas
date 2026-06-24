@@ -18,24 +18,22 @@ interface AvailableSession {
 }
 
 export default function BookingPage() {
-  const router = useRouter();
   const [booked, setBooked] = useState<number[]>([]);
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
-    if (!t) {
-      router.push('/auth/login');
-      return;
-    }
     setToken(t);
-  }, [router]);
+  }, []);
 
   const handleSessionBooked = (session: AvailableSession) => {
+    const t = localStorage.getItem('token');
+    if (!t) {
+      window.location.href = '/auth/login';
+      return;
+    }
     setBooked([...booked, session.id]);
   };
-
-  if (!token) return <div className="min-h-screen bg-white flex items-center justify-center text-gray-600">Loading...</div>;
 
   return (
     <main className="bg-white min-h-screen">
