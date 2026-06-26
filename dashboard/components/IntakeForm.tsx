@@ -383,6 +383,153 @@ export default function IntakeForm() {
     }
   };
 
+  // Submit form data to Formspree
+  const submitToFormspree = async (fileUrls: string[]) => {
+    const formspreeId = process.env.NEXT_PUBLIC_FORMSPREE_ID;
+    if (!formspreeId) {
+      throw new Error('Formspree configuration missing');
+    }
+
+    // Construct form submission object - convert arrays to comma-separated strings
+    const submissionData = {
+      full_name: formData.full_name,
+      company_name: formData.company_name,
+      job_title: formData.job_title,
+      phone: formData.phone,
+      email: formData.email,
+      business_address: formData.business_address,
+      website: formData.website,
+      business_description: formData.business_description,
+      products_services: formData.products_services,
+      target_audience: formData.target_audience,
+      unique_value: formData.unique_value,
+      services_requested: formData.services_requested.join(', '),
+      other_service: formData.other_service,
+      project_description: formData.project_description,
+      primary_goal: formData.primary_goal,
+      examples_like: formData.examples_like,
+      avoid: formData.avoid,
+      branding_services: formData.branding_services.join(', '),
+      current_website: formData.current_website,
+      website_look: formData.website_look,
+      website_features: formData.website_features,
+      website_design_aspects: formData.website_design_aspects.join(', '),
+      facebook: formData.facebook,
+      instagram: formData.instagram,
+      tiktok: formData.tiktok,
+      linkedin: formData.linkedin,
+      youtube: formData.youtube,
+      other_social: formData.other_social,
+      file_urls: fileUrls.join(', '),
+      domain_registrar: formData.domain_registrar,
+      hosting_provider: formData.hosting_provider,
+      website_platform: formData.website_platform,
+      google_email: formData.google_email,
+      meta_business: formData.meta_business,
+      stripe_email: formData.stripe_email,
+      other_access: formData.other_access,
+      start_date: formData.start_date,
+      completion_date: formData.completion_date,
+      budget: formData.budget,
+      deadline_details: formData.deadline_details,
+      communication_preference: formData.communication_preference.join(', '),
+      additional_info: formData.additional_info,
+      client_name: formData.client_name,
+      approval_date: formData.approval_date,
+      agreement: formData.agreement ? 'Yes' : 'No',
+    };
+
+    const response = await fetch(`https://formspree.io/f/${formspreeId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(submissionData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to submit form to Formspree');
+    }
+
+    return response.json();
+  };
+
+  // Reset form to initial state
+  const resetFormData = () => {
+    return {
+      // Section 1
+      full_name: '',
+      company_name: '',
+      job_title: '',
+      phone: '',
+      email: '',
+      business_address: '',
+      website: '',
+
+      // Section 2
+      business_description: '',
+      products_services: '',
+      target_audience: '',
+      unique_value: '',
+
+      // Section 3
+      services_requested: [],
+      other_service: '',
+
+      // Section 4
+      project_description: '',
+      primary_goal: '',
+      examples_like: '',
+      avoid: '',
+
+      // Section 5
+      branding_services: [],
+
+      // Section 6
+      current_website: '',
+      website_look: '',
+      website_features: '',
+      website_design_aspects: [],
+
+      // Section 7
+      facebook: '',
+      instagram: '',
+      tiktok: '',
+      linkedin: '',
+      youtube: '',
+      other_social: '',
+
+      // Section 8
+      files: null,
+
+      // Section 9
+      domain_registrar: '',
+      hosting_provider: '',
+      website_platform: '',
+      google_email: '',
+      meta_business: '',
+      stripe_email: '',
+      other_access: '',
+
+      // Section 10
+      start_date: '',
+      completion_date: '',
+      budget: '',
+      deadline_details: '',
+
+      // Section 11
+      communication_preference: [],
+
+      // Section 12
+      additional_info: '',
+
+      // Section 13
+      client_name: '',
+      approval_date: '',
+      agreement: false,
+    };
+  };
+
   // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -486,11 +633,12 @@ export default function IntakeForm() {
     try {
       setUploading(true);
       const fileUrls = await uploadFiles();
-      setUploading(false);
 
-      // TODO: Submit to Formspree with fileUrls (next task)
-      console.log('Form data:', formData);
-      console.log('File URLs:', fileUrls);
+      // Submit to Formspree
+      await submitToFormspree(fileUrls);
+
+      setUploading(false);
+      setSubmitted(true);
     } catch (error: any) {
       setUploading(false);
       setSubmitError(error.message || 'An error occurred. Please try again.');
@@ -1896,21 +2044,39 @@ export default function IntakeForm() {
           </button>
         </div>
 
-        {/* Success Message */}
-        {submitted && (
-          <div
-            className="mb-8 p-4 rounded"
-            style={{
-              backgroundColor: 'rgba(100, 255, 100, 0.1)',
-              borderColor: '#64ff64',
-              borderWidth: '1px',
-              color: '#99ff99',
-            }}
-          >
-            Form submitted successfully!
-          </div>
-        )}
       </form>
+
+      {/* Success Overlay */}
+      {submitted && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-[rgba(4,18,33,0.95)] border border-[#00aeff] rounded-2xl p-8 max-w-md text-center shadow-[0_0_50px_rgba(0,174,255,0.3)]">
+            <div className="text-4xl mb-4">✓</div>
+            <h2 className="text-2xl font-bold text-[#00aeff] mb-3">Thank You!</h2>
+            <p className="text-[#91c8e8] mb-2">We received your intake form.</p>
+            <p className="text-[#91c8e8] text-sm mb-6">
+              We'll review your information and contact you within 2 business days.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => (window.location.href = '/')}
+                className="px-4 py-2 bg-gradient-to-r from-[#007bff] to-[#00aeff] text-[#00111d] font-bold rounded-lg hover:brightness-[1.12]"
+              >
+                Return Home
+              </button>
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setFormData(resetFormData());
+                  setErrors({});
+                }}
+                className="px-4 py-2 border border-[#00aeff] text-[#00aeff] font-bold rounded-lg hover:bg-[rgba(0,174,255,0.1)]"
+              >
+                Submit Another
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
