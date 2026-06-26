@@ -1,6 +1,16 @@
 'use client';
 
 import React, { useState, ChangeEvent, FormEvent } from 'react';
+import {
+  validateRequired,
+  validateEmail,
+  validatePhone,
+  validateUrl,
+  validateDate,
+  validateCheckboxArray,
+  validateFiles,
+  validateIntakeForm,
+} from '@/lib/intake-validation';
 
 // TypeScript Interface for Form Data
 interface FormData {
@@ -206,6 +216,61 @@ export default function IntakeForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // Define required fields for validation
+  const requiredFields = ['full_name', 'email'];
+  const emailFields = ['email', 'google_email', 'stripe_email'];
+  const phoneFields = ['phone'];
+  const urlFields = ['website', 'facebook', 'instagram', 'tiktok', 'linkedin', 'youtube'];
+  const dateFields = ['start_date', 'completion_date', 'approval_date'];
+  const checkboxArrayFields = ['services_requested', 'branding_services', 'website_design_aspects', 'communication_preference'];
+
+  // Validate a single field based on its type and field name
+  const validateField = (fieldName: string, value: string | boolean, type?: string) => {
+    let result: any = { valid: true };
+
+    // Required field validation
+    if (requiredFields.includes(fieldName)) {
+      if (typeof value === 'string') {
+        result = validateRequired(value);
+      }
+    }
+    // Email validation
+    else if (emailFields.includes(fieldName)) {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        result = validateEmail(value);
+      }
+    }
+    // Phone validation
+    else if (phoneFields.includes(fieldName)) {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        result = validatePhone(value);
+      }
+    }
+    // URL validation
+    else if (urlFields.includes(fieldName)) {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        result = validateUrl(value, false);
+      }
+    }
+    // Date validation
+    else if (dateFields.includes(fieldName)) {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        result = validateDate(value, false);
+      }
+    }
+
+    // Update errors state
+    if (!result.valid) {
+      setErrors((prev) => ({ ...prev, [fieldName]: result.error }));
+    } else {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  };
+
   // Handle text input and textarea changes
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -223,6 +288,8 @@ export default function IntakeForm() {
         ...prev,
         [name]: value,
       }));
+      // Real-time validation
+      validateField(name, value, type);
     }
   };
 
@@ -234,23 +301,51 @@ export default function IntakeForm() {
   ) => {
     setFormData((prev) => {
       const array = prev[name as keyof FormData] as string[];
+      let updatedArray: string[];
       if (isChecked) {
-        return {
-          ...prev,
-          [name]: [...array, value],
-        };
+        updatedArray = [...array, value];
       } else {
-        return {
-          ...prev,
-          [name]: array.filter((item) => item !== value),
-        };
+        updatedArray = array.filter((item) => item !== value);
       }
+
+      // Validate checkbox arrays that require at least one selection
+      if (name === 'services_requested') {
+        const result = validateCheckboxArray(updatedArray, 1);
+        if (!result.valid) {
+          setErrors((prev) => ({ ...prev, [name]: result.error }));
+        } else {
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            delete newErrors[name];
+            return newErrors;
+          });
+        }
+      }
+
+      return {
+        ...prev,
+        [name]: updatedArray,
+      };
     });
   };
 
   // Handle file input changes
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+
+      // Validate files
+      const result = validateFiles(filesArray);
+      if (!result.valid) {
+        setErrors((prev) => ({ ...prev, files: result.error }));
+      } else {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.files;
+          return newErrors;
+        });
+      }
+
       setFormData((prev) => ({
         ...prev,
         files: e.target.files,
@@ -261,8 +356,105 @@ export default function IntakeForm() {
   // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('Form submitted with data:', formData);
-    // Validation and submission logic will be added in next task
+    setSubmitError('');
+
+    // Validate all fields
+    const allErrors: FormErrors = {};
+
+    // Check required fields
+    if (!formData.full_name || formData.full_name.trim().length === 0) {
+      allErrors.full_name = 'Full name is required';
+    }
+
+    // Check email
+    const emailResult = validateEmail(formData.email);
+    if (!emailResult.valid) {
+      allErrors.email = emailResult.error;
+    }
+
+    // Check phone if provided
+    if (formData.phone && formData.phone.trim().length > 0) {
+      const phoneResult = validatePhone(formData.phone);
+      if (!phoneResult.valid) {
+        allErrors.phone = phoneResult.error;
+      }
+    }
+
+    // Check website if provided
+    if (formData.website && formData.website.trim().length > 0) {
+      const websiteResult = validateUrl(formData.website, false);
+      if (!websiteResult.valid) {
+        allErrors.website = websiteResult.error;
+      }
+    }
+
+    // Check social media URLs if provided
+    const socialFields = ['facebook', 'instagram', 'tiktok', 'linkedin', 'youtube'];
+    socialFields.forEach((field) => {
+      const value = formData[field as keyof FormData] as string;
+      if (value && value.trim().length > 0) {
+        const result = validateUrl(value, false);
+        if (!result.valid) {
+          allErrors[field] = result.error;
+        }
+      }
+    });
+
+    // Check email fields if provided
+    const emailFieldsToCheck = ['google_email', 'stripe_email'];
+    emailFieldsToCheck.forEach((field) => {
+      const value = formData[field as keyof FormData] as string;
+      if (value && value.trim().length > 0) {
+        const result = validateEmail(value);
+        if (!result.valid) {
+          allErrors[field] = result.error;
+        }
+      }
+    });
+
+    // Check services are selected
+    const servicesResult = validateCheckboxArray(formData.services_requested, 1);
+    if (!servicesResult.valid) {
+      allErrors.services_requested = servicesResult.error;
+    }
+
+    // Check dates if provided
+    const dateFieldsToCheck = ['start_date', 'completion_date', 'approval_date'];
+    dateFieldsToCheck.forEach((field) => {
+      const value = formData[field as keyof FormData] as string;
+      if (value && value.trim().length > 0) {
+        const result = validateDate(value, false);
+        if (!result.valid) {
+          allErrors[field] = result.error;
+        }
+      }
+    });
+
+    // Check file validation
+    if (formData.files && formData.files.length > 0) {
+      const filesResult = validateFiles(Array.from(formData.files));
+      if (!filesResult.valid) {
+        allErrors.files = filesResult.error;
+      }
+    }
+
+    // If there are errors, display them
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors);
+      setSubmitError('Please fix the errors below before submitting.');
+
+      // Scroll to first error field
+      const firstErrorField = Object.keys(allErrors)[0];
+      const element = document.querySelector(`[name="${firstErrorField}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // If validation passes, proceed with submission
+    console.log('Form submitted with valid data:', formData);
+    // TODO: Upload files and submit to Formspree (next tasks)
   };
 
   return (
@@ -328,14 +520,21 @@ export default function IntakeForm() {
                 name="full_name"
                 value={formData.full_name}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.full_name
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.full_name ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Your full name"
               />
+              {errors.full_name && (
+                <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -346,14 +545,21 @@ export default function IntakeForm() {
                 name="company_name"
                 value={formData.company_name}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.company_name
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.company_name ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Your company name"
               />
+              {errors.company_name && (
+                <p className="text-red-500 text-xs mt-1">{errors.company_name}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -364,14 +570,21 @@ export default function IntakeForm() {
                 name="job_title"
                 value={formData.job_title}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.job_title
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.job_title ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Your job title"
               />
+              {errors.job_title && (
+                <p className="text-red-500 text-xs mt-1">{errors.job_title}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Phone</label>
@@ -380,14 +593,21 @@ export default function IntakeForm() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.phone
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.phone ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Your phone number"
               />
+              {errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -398,14 +618,21 @@ export default function IntakeForm() {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.email ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="your.email@example.com"
               />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Website</label>
@@ -414,14 +641,21 @@ export default function IntakeForm() {
                 name="website"
                 value={formData.website}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.website
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.website ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="https://yourwebsite.com"
               />
+              {errors.website && (
+                <p className="text-red-500 text-xs mt-1">{errors.website}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2">
@@ -432,14 +666,21 @@ export default function IntakeForm() {
                 name="business_address"
                 value={formData.business_address}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.business_address
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.business_address ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Your business address"
               />
+              {errors.business_address && (
+                <p className="text-red-500 text-xs mt-1">{errors.business_address}</p>
+              )}
             </div>
           </div>
         </div>
@@ -469,14 +710,21 @@ export default function IntakeForm() {
                 value={formData.business_description}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.business_description
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.business_description ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Tell us about your business..."
               />
+              {errors.business_description && (
+                <p className="text-red-500 text-xs mt-1">{errors.business_description}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -487,14 +735,21 @@ export default function IntakeForm() {
                 value={formData.products_services}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.products_services
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.products_services ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Describe your products or services..."
               />
+              {errors.products_services && (
+                <p className="text-red-500 text-xs mt-1">{errors.products_services}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -505,14 +760,21 @@ export default function IntakeForm() {
                 value={formData.target_audience}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.target_audience
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.target_audience ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Who is your target audience?"
               />
+              {errors.target_audience && (
+                <p className="text-red-500 text-xs mt-1">{errors.target_audience}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -523,14 +785,21 @@ export default function IntakeForm() {
                 value={formData.unique_value}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.unique_value
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.unique_value ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="What makes you unique?"
               />
+              {errors.unique_value && (
+                <p className="text-red-500 text-xs mt-1">{errors.unique_value}</p>
+              )}
             </div>
           </div>
         </div>
@@ -573,6 +842,9 @@ export default function IntakeForm() {
               </label>
             ))}
           </div>
+          {errors.services_requested && (
+            <p className="text-red-500 text-xs mb-4">{errors.services_requested}</p>
+          )}
           <div>
             <label className="block text-sm font-medium mb-2">
               Other Services
@@ -582,14 +854,21 @@ export default function IntakeForm() {
               value={formData.other_service}
               onChange={handleInputChange}
               rows={2}
-              className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+              className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                errors.other_service
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-[#91c8e8] focus:ring-cyan-400'
+              }`}
               style={{
                 backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                borderColor: '#91c8e8',
+                borderColor: errors.other_service ? '#ef4444' : '#91c8e8',
                 color: '#eef8ff',
               }}
               placeholder="Any other services not listed above?"
             />
+            {errors.other_service && (
+              <p className="text-red-500 text-xs mt-1">{errors.other_service}</p>
+            )}
           </div>
         </div>
 
@@ -618,14 +897,21 @@ export default function IntakeForm() {
                 value={formData.project_description}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.project_description
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.project_description ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Describe your project in detail..."
               />
+              {errors.project_description && (
+                <p className="text-red-500 text-xs mt-1">{errors.project_description}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -636,14 +922,21 @@ export default function IntakeForm() {
                 value={formData.primary_goal}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.primary_goal
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.primary_goal ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="What is your primary goal?"
               />
+              {errors.primary_goal && (
+                <p className="text-red-500 text-xs mt-1">{errors.primary_goal}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -654,14 +947,21 @@ export default function IntakeForm() {
                 value={formData.examples_like}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.examples_like
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.examples_like ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Share examples of websites or designs you like..."
               />
+              {errors.examples_like && (
+                <p className="text-red-500 text-xs mt-1">{errors.examples_like}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -672,14 +972,21 @@ export default function IntakeForm() {
                 value={formData.avoid}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.avoid
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.avoid ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Any styles or features to avoid?"
               />
+              {errors.avoid && (
+                <p className="text-red-500 text-xs mt-1">{errors.avoid}</p>
+              )}
             </div>
           </div>
         </div>
@@ -746,14 +1053,21 @@ export default function IntakeForm() {
                 name="current_website"
                 value={formData.current_website}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.current_website
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.current_website ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Yes/No or website URL"
               />
+              {errors.current_website && (
+                <p className="text-red-500 text-xs mt-1">{errors.current_website}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -764,14 +1078,21 @@ export default function IntakeForm() {
                 value={formData.website_look}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.website_look
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.website_look ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Describe the look and feel..."
               />
+              {errors.website_look && (
+                <p className="text-red-500 text-xs mt-1">{errors.website_look}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -782,14 +1103,21 @@ export default function IntakeForm() {
                 value={formData.website_features}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.website_features
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.website_features ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="List desired features..."
               />
+              {errors.website_features && (
+                <p className="text-red-500 text-xs mt-1">{errors.website_features}</p>
+              )}
             </div>
           </div>
           <div>
@@ -845,14 +1173,21 @@ export default function IntakeForm() {
                 name="facebook"
                 value={formData.facebook}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.facebook
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.facebook ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="https://facebook.com/..."
               />
+              {errors.facebook && (
+                <p className="text-red-500 text-xs mt-1">{errors.facebook}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -863,14 +1198,21 @@ export default function IntakeForm() {
                 name="instagram"
                 value={formData.instagram}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.instagram
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.instagram ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="https://instagram.com/..."
               />
+              {errors.instagram && (
+                <p className="text-red-500 text-xs mt-1">{errors.instagram}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">TikTok</label>
@@ -879,14 +1221,21 @@ export default function IntakeForm() {
                 name="tiktok"
                 value={formData.tiktok}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.tiktok
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.tiktok ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="https://tiktok.com/@..."
               />
+              {errors.tiktok && (
+                <p className="text-red-500 text-xs mt-1">{errors.tiktok}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">LinkedIn</label>
@@ -895,14 +1244,21 @@ export default function IntakeForm() {
                 name="linkedin"
                 value={formData.linkedin}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.linkedin
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.linkedin ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="https://linkedin.com/..."
               />
+              {errors.linkedin && (
+                <p className="text-red-500 text-xs mt-1">{errors.linkedin}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">YouTube</label>
@@ -911,14 +1267,21 @@ export default function IntakeForm() {
                 name="youtube"
                 value={formData.youtube}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.youtube
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.youtube ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="https://youtube.com/..."
               />
+              {errors.youtube && (
+                <p className="text-red-500 text-xs mt-1">{errors.youtube}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Other</label>
@@ -927,14 +1290,21 @@ export default function IntakeForm() {
                 name="other_social"
                 value={formData.other_social}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.other_social
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.other_social ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Other social media accounts"
               />
+              {errors.other_social && (
+                <p className="text-red-500 text-xs mt-1">{errors.other_social}</p>
+              )}
             </div>
           </div>
         </div>
@@ -963,10 +1333,14 @@ export default function IntakeForm() {
               name="files"
               onChange={handleFileChange}
               multiple
-              className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+              className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                errors.files
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-[#91c8e8] focus:ring-cyan-400'
+              }`}
               style={{
                 backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                borderColor: '#91c8e8',
+                borderColor: errors.files ? '#ef4444' : '#91c8e8',
                 color: '#eef8ff',
               }}
             />
@@ -974,6 +1348,9 @@ export default function IntakeForm() {
               <p className="mt-2" style={{ color: '#91c8e8' }}>
                 {formData.files.length} file(s) selected
               </p>
+            )}
+            {errors.files && (
+              <p className="text-red-500 text-xs mt-1">{errors.files}</p>
             )}
           </div>
         </div>
@@ -1003,14 +1380,21 @@ export default function IntakeForm() {
                 name="domain_registrar"
                 value={formData.domain_registrar}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.domain_registrar
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.domain_registrar ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="GoDaddy, Namecheap, etc."
               />
+              {errors.domain_registrar && (
+                <p className="text-red-500 text-xs mt-1">{errors.domain_registrar}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1021,14 +1405,21 @@ export default function IntakeForm() {
                 name="hosting_provider"
                 value={formData.hosting_provider}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.hosting_provider
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.hosting_provider ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Bluehost, SiteGround, etc."
               />
+              {errors.hosting_provider && (
+                <p className="text-red-500 text-xs mt-1">{errors.hosting_provider}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1039,14 +1430,21 @@ export default function IntakeForm() {
                 name="website_platform"
                 value={formData.website_platform}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.website_platform
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.website_platform ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="WordPress, Shopify, etc."
               />
+              {errors.website_platform && (
+                <p className="text-red-500 text-xs mt-1">{errors.website_platform}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1057,14 +1455,21 @@ export default function IntakeForm() {
                 name="google_email"
                 value={formData.google_email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.google_email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.google_email ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="admin@yourcompany.com"
               />
+              {errors.google_email && (
+                <p className="text-red-500 text-xs mt-1">{errors.google_email}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1075,14 +1480,21 @@ export default function IntakeForm() {
                 name="meta_business"
                 value={formData.meta_business}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.meta_business
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.meta_business ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Your Meta Business ID or email"
               />
+              {errors.meta_business && (
+                <p className="text-red-500 text-xs mt-1">{errors.meta_business}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1093,14 +1505,21 @@ export default function IntakeForm() {
                 name="stripe_email"
                 value={formData.stripe_email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.stripe_email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.stripe_email ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="stripe@yourcompany.com"
               />
+              {errors.stripe_email && (
+                <p className="text-red-500 text-xs mt-1">{errors.stripe_email}</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-2">
@@ -1111,14 +1530,21 @@ export default function IntakeForm() {
                 value={formData.other_access}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.other_access
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.other_access ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Any other login information we should know about?"
               />
+              {errors.other_access && (
+                <p className="text-red-500 text-xs mt-1">{errors.other_access}</p>
+              )}
             </div>
           </div>
         </div>
@@ -1148,13 +1574,20 @@ export default function IntakeForm() {
                 name="start_date"
                 value={formData.start_date}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.start_date
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.start_date ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
               />
+              {errors.start_date && (
+                <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1165,13 +1598,20 @@ export default function IntakeForm() {
                 name="completion_date"
                 value={formData.completion_date}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.completion_date
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.completion_date ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
               />
+              {errors.completion_date && (
+                <p className="text-red-500 text-xs mt-1">{errors.completion_date}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Budget</label>
@@ -1180,14 +1620,21 @@ export default function IntakeForm() {
                 name="budget"
                 value={formData.budget}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.budget
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.budget ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="e.g., $5,000 - $10,000"
               />
+              {errors.budget && (
+                <p className="text-red-500 text-xs mt-1">{errors.budget}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1198,14 +1645,21 @@ export default function IntakeForm() {
                 name="deadline_details"
                 value={formData.deadline_details}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.deadline_details
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.deadline_details ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Any specific deadline requirements?"
               />
+              {errors.deadline_details && (
+                <p className="text-red-500 text-xs mt-1">{errors.deadline_details}</p>
+              )}
             </div>
           </div>
         </div>
@@ -1271,14 +1725,21 @@ export default function IntakeForm() {
               value={formData.additional_info}
               onChange={handleInputChange}
               rows={4}
-              className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+              className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                errors.additional_info
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-[#91c8e8] focus:ring-cyan-400'
+              }`}
               style={{
                 backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                borderColor: '#91c8e8',
+                borderColor: errors.additional_info ? '#ef4444' : '#91c8e8',
                 color: '#eef8ff',
               }}
               placeholder="Tell us anything else we should know about your project or business..."
             />
+            {errors.additional_info && (
+              <p className="text-red-500 text-xs mt-1">{errors.additional_info}</p>
+            )}
           </div>
         </div>
 
@@ -1307,14 +1768,21 @@ export default function IntakeForm() {
                 name="client_name"
                 value={formData.client_name}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.client_name
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.client_name ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
                 placeholder="Name of approver"
               />
+              {errors.client_name && (
+                <p className="text-red-500 text-xs mt-1">{errors.client_name}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -1325,13 +1793,20 @@ export default function IntakeForm() {
                 name="approval_date"
                 value={formData.approval_date}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2"
+                className={`w-full px-4 py-2 rounded bg-opacity-20 border focus:outline-none focus:ring-2 ${
+                  errors.approval_date
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-[#91c8e8] focus:ring-cyan-400'
+                }`}
                 style={{
                   backgroundColor: 'rgba(0, 174, 255, 0.1)',
-                  borderColor: '#91c8e8',
+                  borderColor: errors.approval_date ? '#ef4444' : '#91c8e8',
                   color: '#eef8ff',
                 }}
               />
+              {errors.approval_date && (
+                <p className="text-red-500 text-xs mt-1">{errors.approval_date}</p>
+              )}
             </div>
             <div>
               <label className="flex items-center cursor-pointer">
