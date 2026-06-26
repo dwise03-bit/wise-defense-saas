@@ -353,6 +353,36 @@ export default function IntakeForm() {
     }
   };
 
+  // Upload files to the API endpoint
+  const uploadFiles = async (): Promise<string[]> => {
+    if (!formData.files || formData.files.length === 0) {
+      return []; // No files to upload
+    }
+
+    const formDataObj = new FormData();
+    for (let i = 0; i < formData.files.length; i++) {
+      formDataObj.append('files', formData.files[i]);
+    }
+
+    try {
+      const response = await fetch('/api/intake/upload', {
+        method: 'POST',
+        body: formDataObj,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'File upload failed');
+      }
+
+      const data = await response.json();
+      return data.urls || [];
+    } catch (error: any) {
+      setSubmitError(error.message || 'Failed to upload files. Please try again.');
+      throw error;
+    }
+  };
+
   // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -452,9 +482,19 @@ export default function IntakeForm() {
       return;
     }
 
-    // If validation passes, proceed with submission
-    console.log('Form submitted with valid data:', formData);
-    // TODO: Upload files and submit to Formspree (next tasks)
+    // If validation passes, proceed with file upload and submission
+    try {
+      setUploading(true);
+      const fileUrls = await uploadFiles();
+      setUploading(false);
+
+      // TODO: Submit to Formspree with fileUrls (next task)
+      console.log('Form data:', formData);
+      console.log('File URLs:', fileUrls);
+    } catch (error: any) {
+      setUploading(false);
+      setSubmitError(error.message || 'An error occurred. Please try again.');
+    }
   };
 
   return (
@@ -1827,47 +1867,36 @@ export default function IntakeForm() {
           </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="mb-8 flex gap-4">
-          <button
-            type="submit"
-            className="px-8 py-3 rounded font-bold text-white transition-all duration-200 hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, #00aeff 0%, #0088cc 100%)',
-              boxShadow: '0 0 20px rgba(0, 174, 255, 0.3)',
-            }}
-          >
-            Submit Intake Form
-          </button>
-          <button
-            type="reset"
-            className="px-8 py-3 rounded font-bold transition-all duration-200 hover:scale-105"
-            style={{
-              backgroundColor: 'rgba(4, 18, 33, 0.82)',
-              borderColor: '#91c8e8',
-              borderWidth: '1px',
-              color: '#91c8e8',
-            }}
-          >
-            Clear Form
-          </button>
-        </div>
-
-        {/* Error/Success Messages */}
+        {/* Error Message */}
         {submitError && (
-          <div
-            className="mb-8 p-4 rounded"
-            style={{
-              backgroundColor: 'rgba(255, 100, 100, 0.1)',
-              borderColor: '#ff6464',
-              borderWidth: '1px',
-              color: '#ff9999',
-            }}
-          >
+          <div className="w-full p-4 border border-red-500 rounded-[14px] bg-[rgba(255,0,0,0.12)] text-red-400 text-sm mb-4">
             {submitError}
           </div>
         )}
 
+        {/* Uploading Progress Message */}
+        {uploading && (
+          <div className="w-full p-4 border border-[#00aeff] rounded-[14px] bg-[rgba(0,174,255,0.12)] text-[#00aeff] text-sm mb-4">
+            Uploading files... Please wait.
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <div className="mb-8 flex gap-4">
+          <button
+            type="submit"
+            disabled={uploading}
+            className={`w-full py-4 px-5 border-0 rounded-[14px] text-[#00111d] text-lg font-black tracking-widest uppercase cursor-pointer shadow-[0_0_28px_rgba(0,174,255,0.55)] hover:brightness-[1.12] ${
+              uploading
+                ? 'bg-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-[#007bff] to-[#00aeff]'
+            }`}
+          >
+            {uploading ? 'Uploading...' : 'Submit Client Intake'}
+          </button>
+        </div>
+
+        {/* Success Message */}
         {submitted && (
           <div
             className="mb-8 p-4 rounded"
