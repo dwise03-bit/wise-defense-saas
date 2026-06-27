@@ -3,7 +3,7 @@
  * Handles approve/reject for pending articles
  */
 
-import { pool } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
@@ -19,10 +19,10 @@ export async function POST(request: Request) {
 
     if (action === 'approve') {
       // Mark as processed
-      await pool.query('UPDATE news_articles SET is_processed = true WHERE id = $1', [articleId]);
+      await query('UPDATE news_articles SET is_processed = true WHERE id = $1', [articleId]);
 
       // Create high-priority review
-      await pool.query(
+      await query(
         `INSERT INTO content_reviews (article_id, relevance_score, sentiment, priority_level, recommended_for_social)
          VALUES ($1, 0.9, 'positive', 'high', true)
          ON CONFLICT (article_id) DO UPDATE SET
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       );
     } else if (action === 'reject') {
       // Mark as processed (rejected)
-      await pool.query('UPDATE news_articles SET is_processed = true WHERE id = $1', [articleId]);
+      await query('UPDATE news_articles SET is_processed = true WHERE id = $1', [articleId]);
 
       return Response.json(
         { success: true, message: 'Article rejected' },
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     // Get pending articles for approval dashboard
-    const result = await pool.query(
+    const result = await query(
       `SELECT id, title, content, source_name, source_url, created_at
        FROM news_articles
        WHERE is_processed = false

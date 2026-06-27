@@ -20,8 +20,12 @@ function run(message, cmd) {
 }
 
 client.on("messageCreate", (message) => {
+  console.log(`[MSG] from=${message.author.id} content=${message.content}`);
   if (message.author.bot) return;
-  if (message.author.id !== ADMIN_ID) return;
+  if (message.author.id !== ADMIN_ID) {
+    console.log(`[MSG] ignored — not admin (expected ${ADMIN_ID})`);
+    return;
+  }
 
   const args = message.content.trim().split(" ");
   const cmd = args[0];
@@ -34,10 +38,22 @@ client.on("messageCreate", (message) => {
   message.reply("Commands: !status !update !restart !logs");
 });
 
-client.login(process.env.BOT_TOKEN);
-
 client.once("ready", () => {
-  console.log("LOGIN SUCCESS:", client.user.tag);
+  console.log(`LOGIN SUCCESS: ${client.user.tag} | ADMIN_ID=${ADMIN_ID}`);
+  console.log(`Guilds: ${client.guilds.cache.map(g => `${g.name}(${g.id})`).join(', ')}`);
+  // Send startup ping to first text channel the bot can see
+  const guild = client.guilds.cache.first();
+  if (guild) {
+    const channel = guild.channels.cache.find(c => c.isTextBased() && c.permissionsFor(guild.members.me).has('SendMessages'));
+    if (channel) {
+      channel.send('✅ Admin bot online. Commands: `!status` `!logs [service]` `!restart`').catch(console.error);
+      console.log(`Sent startup ping to #${channel.name}`);
+    } else {
+      console.log('No writable channel found');
+    }
+  } else {
+    console.log('Bot is in NO guilds');
+  }
 });
 
 client.login(process.env.BOT_TOKEN).catch(console.error);

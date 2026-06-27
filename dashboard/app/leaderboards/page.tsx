@@ -1,11 +1,8 @@
-/**
- * Member Leaderboards
- * Competitive rankings: points, streaks, viral content
- */
-
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Trophy, TrendingUp, Zap } from 'lucide-react';
 
 interface LeaderboardEntry {
   rank: number;
@@ -15,19 +12,12 @@ interface LeaderboardEntry {
   total_points?: number;
   engagement_count?: number;
   streak_current?: number;
-  streak_longest?: number;
-  streak_badge?: string;
-  viral_posts?: number;
-  total_engagement?: number;
-  avg_engagement?: number;
 }
 
 type LeaderboardType = 'points' | 'streaks' | 'viral';
-type Period = 'all' | 'week' | 'month';
 
 export default function LeaderboardsPage() {
   const [type, setType] = useState<LeaderboardType>('points');
-  const [period, setPeriod] = useState<Period>('all');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,13 +26,10 @@ export default function LeaderboardsPage() {
       try {
         const params = new URLSearchParams();
         params.append('type', type);
-        if (type === 'points') {
-          params.append('period', period);
-        }
 
         const response = await fetch(`/api/leaderboards?${params}`);
         const data = await response.json();
-        setLeaderboard(data.leaderboard);
+        setLeaderboard(data.leaderboard || []);
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error);
       } finally {
@@ -51,160 +38,139 @@ export default function LeaderboardsPage() {
     };
 
     fetchLeaderboard();
-  }, [type, period]);
+  }, [type]);
 
   const getMedalEmoji = (rank: number) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
-    return '•';
+    return null;
   };
 
   const getTierColor = (tier: string) => {
-    if (tier === 'enterprise') return 'text-purple-500';
-    if (tier === 'pro') return 'text-blue-500';
-    return 'text-gray-400';
+    if (tier === 'vip') return 'text-red-600';
+    if (tier === 'pro') return 'text-blue-600';
+    return 'text-gray-600';
   };
 
+  const tabs = [
+    { id: 'points' as const, label: 'Points', icon: Trophy },
+    { id: 'streaks' as const, label: 'Streaks', icon: Zap },
+    { id: 'viral' as const, label: 'Viral', icon: TrendingUp },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <h1 className="text-4xl font-bold mb-2">🏆 Member Leaderboards</h1>
-      <p className="text-gray-400 mb-8">Compete, engage, and earn recognition</p>
+    <main className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-gray-900">
+            Wise Defense
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="text-sm text-gray-600 hover:text-gray-900">
+              Dashboard
+            </Link>
+            <Link href="/community" className="text-sm text-gray-600 hover:text-gray-900">
+              Community
+            </Link>
+          </div>
+        </div>
+      </header>
 
-      {/* Type Selector */}
-      <div className="flex gap-4 mb-8">
-        <button
-          onClick={() => setType('points')}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
-            type === 'points' ? 'bg-red-600' : 'bg-gray-800 hover:bg-gray-700'
-          }`}
-        >
-          💰 Points
-        </button>
-        <button
-          onClick={() => setType('streaks')}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
-            type === 'streaks' ? 'bg-red-600' : 'bg-gray-800 hover:bg-gray-700'
-          }`}
-        >
-          🔥 Streaks
-        </button>
-        <button
-          onClick={() => setType('viral')}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
-            type === 'viral' ? 'bg-red-600' : 'bg-gray-800 hover:bg-gray-700'
-          }`}
-        >
-          📱 Viral
-        </button>
+      {/* Hero */}
+      <section className="bg-white border-b border-gray-200 py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <Trophy className="w-8 h-8 text-red-600" />
+            <h1 className="text-4xl font-bold text-gray-900">Leaderboards</h1>
+          </div>
+          <p className="text-lg text-gray-600">
+            See how you stack up against other members of the community.
+          </p>
+        </div>
+      </section>
+
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        {/* Tabs */}
+        <div className="flex gap-4 mb-12 border-b border-gray-200">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setType(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium transition-all ${
+                  type === tab.id
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Leaderboard Table */}
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">Loading leaderboard...</p>
+          </div>
+        ) : leaderboard.length > 0 ? (
+          <div className="space-y-2">
+            {leaderboard.map((entry, idx) => {
+              const medal = getMedalEmoji(entry.rank);
+              const value =
+                type === 'points'
+                  ? entry.total_points
+                  : type === 'streaks'
+                  ? entry.streak_current
+                  : entry.engagement_count;
+
+              return (
+                <div
+                  key={entry.id}
+                  className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                    entry.rank <= 3
+                      ? 'bg-gradient-to-r from-red-50 to-transparent border-red-200'
+                      : 'bg-white border-gray-200 hover:border-red-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="text-center w-12">
+                      {medal ? (
+                        <span className="text-2xl">{medal}</span>
+                      ) : (
+                        <span className="text-lg font-bold text-gray-600">#{entry.rank}</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{entry.first_name}</p>
+                      <p className={`text-xs font-medium uppercase tracking-wider ${getTierColor(entry.tier)}`}>
+                        {entry.tier}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-gray-900">{value}</p>
+                    <p className="text-xs text-gray-600">
+                      {type === 'points' ? 'points' : type === 'streaks' ? 'days' : 'engagement'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-white rounded-2xl border border-gray-200">
+            <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No entries yet</p>
+          </div>
+        )}
       </div>
-
-      {/* Period Selector (for points only) */}
-      {type === 'points' && (
-        <div className="flex gap-2 mb-8">
-          <button
-            onClick={() => setPeriod('all')}
-            className={`px-4 py-2 rounded text-sm ${
-              period === 'all' ? 'bg-red-600' : 'bg-gray-800'
-            }`}
-          >
-            All Time
-          </button>
-          <button
-            onClick={() => setPeriod('month')}
-            className={`px-4 py-2 rounded text-sm ${
-              period === 'month' ? 'bg-red-600' : 'bg-gray-800'
-            }`}
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setPeriod('week')}
-            className={`px-4 py-2 rounded text-sm ${
-              period === 'week' ? 'bg-red-600' : 'bg-gray-800'
-            }`}
-          >
-            This Week
-          </button>
-        </div>
-      )}
-
-      {/* Leaderboard */}
-      {loading ? (
-        <div className="text-center">Loading leaderboard...</div>
-      ) : (
-        <div className="space-y-3">
-          {leaderboard.map((entry, index) => (
-            <div
-              key={entry.id}
-              className="bg-gray-900 p-4 rounded-lg border border-red-600 border-opacity-30 flex items-center justify-between hover:border-opacity-60 transition"
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <span className="text-2xl w-8">{getMedalEmoji(entry.rank)}</span>
-                <div>
-                  <div className="font-semibold">{entry.first_name}</div>
-                  <span className={`text-sm ${getTierColor(entry.tier)}`}>
-                    {entry.tier.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              {type === 'points' && (
-                <div className="flex gap-8 items-center">
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-red-500">{entry.total_points}</div>
-                    <div className="text-xs text-gray-400">points</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg">🔥 {entry.streak_current}</div>
-                    <div className="text-xs text-gray-400">streak</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg">💬 {entry.engagement_count}</div>
-                    <div className="text-xs text-gray-400">actions</div>
-                  </div>
-                </div>
-              )}
-
-              {type === 'streaks' && (
-                <div className="flex gap-8 items-center">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-red-500">{entry.streak_current}</div>
-                    <div className="text-xs text-gray-400">current</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl">{entry.streak_badge}</div>
-                    <div className="text-xs text-gray-400">best: {entry.streak_longest}</div>
-                  </div>
-                </div>
-              )}
-
-              {type === 'viral' && (
-                <div className="flex gap-8 items-center">
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-red-500">{entry.viral_posts}</div>
-                    <div className="text-xs text-gray-400">viral posts</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg">{entry.total_engagement}</div>
-                    <div className="text-xs text-gray-400">total engagement</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg">{Math.round(entry.avg_engagement || 0)}</div>
-                    <div className="text-xs text-gray-400">avg per post</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {leaderboard.length === 0 && (
-            <div className="text-center text-gray-400 py-8">
-              No entries yet. Start engaging to earn a spot!
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </main>
   );
 }

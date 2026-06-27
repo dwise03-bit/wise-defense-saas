@@ -663,4 +663,5 @@ export async function closePool() {
   console.log('Database pool closed');
 }
 
+export { pool };
 export type { Pool, PoolClient };
