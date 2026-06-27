@@ -43,7 +43,7 @@ export async function addSource(
        RETURNING *`,
       [sourceName, sourceType, sourceUrl, keywords, apiKey]
     );
-    return result.rows[0] || null;
+    return (result.rows[0] as NewsSource) || null;
   } catch (error) {
     console.error('[NEWS_MANAGER] Error adding source:', error);
     return null;
