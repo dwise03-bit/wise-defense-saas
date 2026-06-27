@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   turbopack: {
-    root: __dirname,
+    root: process.cwd(),
   },
 };
 
