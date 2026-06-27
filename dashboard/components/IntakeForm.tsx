@@ -347,6 +347,7 @@ export default function IntakeForm() {
 
       <main className="page">
         <section className="hero">
+          <img src="/intake-design.png" alt="WISE² Design" style={{ width: '100%', maxWidth: '100%', height: 'auto', borderRadius: '16px', marginBottom: '24px' }} />
           <div className="badge">W²</div>
           <h1>WISE² Client Information Form</h1>
           <p>One Platform. Infinite Knowledge. Unlimited Creation.</p>
