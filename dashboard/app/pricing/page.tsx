@@ -3,138 +3,193 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import MembershipSelector from '@/components/MembershipSelector';
-import CheckoutButton from '@/components/CheckoutButton';
-import { TierDiscoveryModal } from '@/components/TierDiscovery/TierDiscoveryModal';
-import { Check } from 'lucide-react';
+import { Check, ChevronRight, ArrowRight } from 'lucide-react';
 
 export default function PricingPage() {
-  const [showTierModal, setShowTierModal] = useState(false);
   const router = useRouter();
 
-  const handleSelectTier = (tierId: string) => {
-    console.log('Selected tier:', tierId);
-  };
-
-  const handleTierSelect = (tier: string) => {
-    setShowTierModal(false);
+  const handleSelectTier = (tier: string) => {
     router.push(`/auth/signup?tier=${tier}`);
   };
 
+  const tiers = [
+    {
+      id: 'starter',
+      name: 'Starter',
+      price: 99,
+      description: 'For beginners building fundamentals',
+      features: [
+        'Up to 2 sessions per month',
+        'Access to video library',
+        'Community forum access',
+        'Basic progress tracking',
+        'Email support',
+      ],
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: 199,
+      description: 'For serious learners advancing their skills',
+      featured: true,
+      features: [
+        'Up to 4 sessions per month',
+        '1-on-1 coaching sessions',
+        'Complete video library',
+        'Community forum access',
+        'Personalized drills',
+        'Priority email support',
+        'Progress analytics',
+      ],
+    },
+    {
+      id: 'vip',
+      name: 'VIP',
+      price: 499,
+      description: 'For competitive shooters and serious athletes',
+      features: [
+        'Unlimited monthly sessions',
+        'Unlimited 1-on-1 coaching',
+        'Complete video library',
+        'Exclusive VIP community',
+        'Custom training plans',
+        '24/7 priority support',
+        'Advanced analytics',
+        'Competition prep',
+      ],
+    },
+  ];
+
+  const faqs = [
+    {
+      q: 'Can I change my plan?',
+      a: 'Yes, you can upgrade or downgrade your plan at any time. Changes take effect at your next billing cycle.',
+    },
+    {
+      q: 'Is there a refund policy?',
+      a: 'We offer a 7-day money-back guarantee if you\'re not satisfied with your first month.',
+    },
+    {
+      q: 'Do you offer group rates?',
+      a: 'Yes, we offer discounts for organizations and groups. Contact us for more information.',
+    },
+  ];
+
   return (
     <main className="bg-black min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-black border-b border-gray-800 py-4 px-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <Image src="/logo-w2.png" alt="Wise Defense" width={160} height={50} className="h-12 w-auto" />
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-gray-900">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
+            Wise Defense
           </Link>
-          <nav className="flex gap-6">
-            <Link href="/" className="text-gray hover:text-neon-red transition-glow">Home</Link>
-            <Link href="/dashboard" className="text-gray hover:text-neon-red transition-glow">Dashboard</Link>
-            <Link href="/auth/login" className="text-gray hover:text-neon-red transition-glow">Log In</Link>
-          </nav>
+          <div className="flex items-center gap-8">
+            <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
+              Home
+            </Link>
+            <Link href="/shop" className="text-gray-400 hover:text-white text-sm transition-colors">
+              Shop
+            </Link>
+            <Link href="/auth/login" className="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all text-sm font-semibold">
+              Sign In
+            </Link>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Page Heading */}
-      <section className="bg-black py-16 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="heading-silver text-4xl mb-4">Choose Your Training Path</h1>
-          <p className="text-gray mb-2">
-            All plans include access to our video library and community forum
+      {/* Hero */}
+      <section className="py-24 px-6 border-b border-gray-900">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <h1 className="text-5xl font-bold text-white">Simple, Transparent Pricing</h1>
+          <p className="text-xl text-gray-400">
+            Choose the plan that fits your training goals. All plans include access to our community and resources.
           </p>
         </div>
       </section>
 
-      {/* Tier Cards */}
-      <section className="bg-black py-12 px-4">
+      {/* Pricing Tiers */}
+      <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <button
-              onClick={() => setShowTierModal(true)}
-              className="text-neon-red hover:text-red-400 text-sm font-medium underline"
-            >
-              Not sure which tier is right for you? Take our quick quiz.
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+            {tiers.map((tier) => (
+              <div
+                key={tier.id}
+                className={`rounded-2xl transition-all border p-8 ${
+                  tier.featured
+                    ? 'bg-gradient-to-br from-red-600/20 to-red-950/20 border-red-600/50 ring-2 ring-red-600/30 scale-105'
+                    : 'bg-gray-900/30 border-gray-800 hover:border-red-600/30'
+                }`}
+              >
+                {tier.featured && (
+                  <div className="mb-4 inline-block px-3 py-1 bg-red-950 text-red-400 text-xs font-semibold rounded-full">
+                    Most Popular
+                  </div>
+                )}
+                <h3 className="text-2xl font-semibold text-white mb-2">{tier.name}</h3>
+                <p className="text-gray-400 text-sm mb-6">{tier.description}</p>
+                <div className="mb-6">
+                  <span className="text-5xl font-bold text-white">${tier.price}</span>
+                  <span className="text-gray-400 ml-2">/month</span>
+                </div>
+                <button
+                  onClick={() => handleSelectTier(tier.id)}
+                  className={`w-full py-3 rounded-full font-semibold transition-all mb-8 ${
+                    tier.featured
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gray-800 text-white hover:bg-gray-700'
+                  }`}
+                >
+                  Get Started
+                </button>
+                <div className="space-y-4">
+                  {tier.features.map((feature, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-300">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          <MembershipSelector onSelect={handleSelectTier} />
-        </div>
-      </section>
 
-      {/* Comparison Table */}
-      <section className="bg-black py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="section-heading text-center mb-12">Detailed Comparison</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-t-2 border-neon-red border-b border-gray-800">
-                  <th className="text-left py-4 px-4 text-silver font-bold">Feature</th>
-                  <th className="text-center py-4 px-4 text-silver font-bold">Starter</th>
-                  <th className="text-center py-4 px-4 text-silver font-bold">Pro</th>
-                  <th className="text-center py-4 px-4 text-silver font-bold">VIP</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-800">
-                  <td className="py-4 px-4 text-gray">Sessions per Month</td>
-                  <td className="text-center py-4 px-4 text-gray">2</td>
-                  <td className="text-center py-4 px-4 text-gray">4</td>
-                  <td className="text-center py-4 px-4 text-neon-red">Unlimited</td>
-                </tr>
-                <tr className="border-b border-gray-800 bg-gray-900 bg-opacity-20">
-                  <td className="py-4 px-4 text-gray">1-on-1 Coaching</td>
-                  <td className="text-center py-4 px-4 text-gray">—</td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                </tr>
-                <tr className="border-b border-gray-800">
-                  <td className="py-4 px-4 text-gray">Video Library</td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                </tr>
-                <tr className="border-b border-gray-800 bg-gray-900 bg-opacity-20">
-                  <td className="py-4 px-4 text-gray">Community Access</td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                </tr>
-                <tr className="border-b border-gray-800">
-                  <td className="py-4 px-4 text-gray">Personalized Drills</td>
-                  <td className="text-center py-4 px-4">—</td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                </tr>
-                <tr className="bg-gray-900 bg-opacity-20">
-                  <td className="py-4 px-4 text-gray">Priority Support</td>
-                  <td className="text-center py-4 px-4">—</td>
-                  <td className="text-center py-4 px-4">—</td>
-                  <td className="text-center py-4 px-4"><Check className="inline text-neon-red" size={20} /></td>
-                </tr>
-              </tbody>
-            </table>
+          {/* FAQs */}
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-white mb-12 text-center">Questions?</h2>
+            <div className="space-y-6">
+              {faqs.map((faq, i) => (
+                <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 hover:border-red-600/30 transition-colors">
+                  <h4 className="font-semibold text-white mb-2">{faq.q}</h4>
+                  <p className="text-gray-400">{faq.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="bg-black py-20 px-4">
+      {/* CTA */}
+      <section className="py-24 px-6 border-t border-gray-900">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="heading-silver text-4xl mb-6">Ready to Start Training?</h2>
+          <h2 className="text-4xl font-bold text-white mb-6">Start Your Training Today</h2>
+          <p className="text-xl text-gray-400 mb-12">
+            Join hundreds of students achieving their training goals with Wise Defense.
+          </p>
           <Link href="/auth/signup">
-            <button className="btn-primary">Get Started Today</button>
+            <button className="px-10 py-4 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-600/50 transition-all font-semibold text-lg inline-flex items-center gap-2">
+              Begin Free Trial
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </Link>
         </div>
       </section>
 
-      <TierDiscoveryModal
-        isOpen={showTierModal}
-        onClose={() => setShowTierModal(false)}
-        onTierSelect={handleTierSelect}
-      />
+      {/* Footer */}
+      <footer className="border-t border-gray-900 py-12 px-6">
+        <div className="max-w-6xl mx-auto text-center text-gray-500 text-sm">
+          <p>&copy; 2026 Wise Defense LLC. All rights reserved.</p>
+        </div>
+      </footer>
     </main>
   );
 }

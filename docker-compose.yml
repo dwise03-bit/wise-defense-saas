@@ -6,11 +6,18 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.letsencrypt.acme.email=dwise03@gmail.com
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /letsencrypt:/letsencrypt
 
   db:
     image: postgres:16
@@ -43,6 +50,25 @@ services:
     ports:
       - "3001:3000"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`wisedefense.store`,`www.wisedefense.store`)"
+      - "traefik.http.routers.dashboard.entrypoints=web,websecure"
+      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.dashboard-cache.headers.customresponseheaders.Cache-Control=public, max-age=3600, s-maxage=3600"
+      - "traefik.http.middlewares.dashboard-nocache.headers.customresponseheaders.Cache-Control=no-cache, no-store, must-revalidate"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-nocache@docker"
+      - "traefik.http.routers.dashboard-http.rule=Host(`wisedefense.store`,`www.wisedefense.store`)"
+      - "traefik.http.routers.dashboard-http.entrypoints=web"
+      - "traefik.http.routers.dashboard-http.middlewares=redirect-https@docker,dashboard-nocache@docker"
 
   worker:
     build: ./worker

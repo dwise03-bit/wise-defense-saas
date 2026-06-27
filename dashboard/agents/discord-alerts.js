@@ -185,19 +185,20 @@ async function runAlertCycle() {
     console.log('[DISCORD] Starting alert cycle');
     console.log('[DISCORD] ========================================');
 
-    // Find high-priority articles that haven't been alerted
+    // Find high-priority articles from last 6 hours that haven't been alerted
     const result = await pool.query(
       `SELECT na.id, na.title, na.content, na.source_url, na.source_name, na.image_url,
               cr.sentiment, cr.priority_level
        FROM news_articles na
        JOIN content_reviews cr ON na.id = cr.article_id
        WHERE cr.priority_level = 'high'
+       AND na.created_at > NOW() - INTERVAL '6 hours'
        AND na.id NOT IN (
-         SELECT article_id FROM news_alerts_sent 
+         SELECT article_id FROM news_alerts_sent
          WHERE platform = 'discord' AND delivery_status = 'sent'
        )
        ORDER BY na.created_at DESC
-       LIMIT 10`
+       LIMIT 3`
     );
 
     const articles = result.rows;
@@ -268,14 +269,14 @@ async function start() {
     console.log('[DISCORD] Running initial alert cycle...');
     await runAlertCycle();
 
-    // Run every 15 minutes
-    const ALERT_INTERVAL = 15 * 60 * 1000;
+    // Run every 2 hours
+    const ALERT_INTERVAL = 2 * 60 * 60 * 1000;
 
     setInterval(async () => {
       await runAlertCycle();
     }, ALERT_INTERVAL);
 
-    console.log('[DISCORD] Agent ready - alerts every 15 minutes');
+    console.log('[DISCORD] Agent ready - alerts every 2 hours');
   } catch (error) {
     console.error('[DISCORD] Startup error:', error);
     process.exit(1);
