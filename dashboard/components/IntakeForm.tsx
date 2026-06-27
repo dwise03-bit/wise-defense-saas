@@ -42,12 +42,22 @@ export default function IntakeForm() {
     setFormData(prev => ({ ...prev, files: e.target.files }));
   };
 
-  const Section = ({ num, title, children, style }: { num: string; title: string; children: React.ReactNode; style?: React.CSSProperties }) => (
-    <section style={style} className="cyber-section">
-      <h2 className="section-title">## {num} {title}</h2>
-      <div className="section-content">{children}</div>
-    </section>
-  );
+  const Section = ({ num, title, children, desktop }: { num: string; title: string; children: React.ReactNode; desktop?: { top: string; left?: string; right?: string; width: string } }) => {
+    const style = !isMobile && desktop ? {
+      position: 'absolute' as const,
+      top: desktop.top,
+      left: desktop.left,
+      right: desktop.right,
+      width: desktop.width,
+    } : undefined;
+
+    return (
+      <section style={style} className={`cyber-section ${!isMobile && desktop ? 'absolute-section' : ''}`}>
+        <h2 className="section-title">## {num} {title}</h2>
+        <div className="section-content">{children}</div>
+      </section>
+    );
+  };
 
   return (
     <div className="intake-container">
@@ -117,33 +127,22 @@ export default function IntakeForm() {
           margin-top: 12px;
         }
 
-        /* Desktop 3-column layout */
+        /* Desktop absolute positioning layout */
         .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 20px;
-          grid-auto-rows: min-content;
+          position: relative;
+          min-height: 2400px;
           margin-bottom: 40px;
         }
 
-        .left-column {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
+        .absolute-section {
+          max-width: 380px;
         }
 
-        .center-column {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          gap: 20px;
-          min-height: 600px;
-        }
-
+        /* Mobile/tablet grid fallback */
+        .left-column,
+        .center-column,
         .right-column {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
+          display: none;
         }
 
         .cyber-section {
@@ -252,7 +251,6 @@ export default function IntakeForm() {
         }
 
         .submit-button {
-          width: 100%;
           padding: 14px;
           border: 2px solid #00aeff;
           border-radius: 6px;
@@ -266,6 +264,17 @@ export default function IntakeForm() {
           box-shadow: 0 0 20px rgba(0,174,255,0.6);
           transition: all 0.3s ease;
           font-family: 'Courier New', monospace;
+          margin-top: 30px;
+        }
+
+        @media (min-width: 1200px) {
+          .submit-button {
+            position: absolute;
+            top: calc(88% + 240px);
+            left: 2%;
+            width: calc(96% - 20px);
+            max-width: 380px;
+          }
         }
 
         .submit-button:hover {
@@ -274,15 +283,29 @@ export default function IntakeForm() {
           transform: translateY(-2px);
         }
 
-        /* Mobile responsive */
+        /* Mobile/tablet responsive - fallback to flex/grid layout */
         @media (max-width: 1199px) {
           .form-grid {
-            grid-template-columns: 1fr;
+            position: static;
+            min-height: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
           }
 
-          .center-column {
-            min-height: auto;
-            order: 3;
+          .absolute-section {
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            width: 100% !important;
+            max-width: none !important;
+          }
+
+          .left-column,
+          .center-column,
+          .right-column {
+            display: contents;
           }
 
           .cyber-section {
@@ -358,7 +381,10 @@ export default function IntakeForm() {
             {/* LEFT COLUMN */}
             <div className="left-column">
               {/* 01 Contact Information */}
-              <Section num="01" title="CONTACT INFORMATION">
+              <Section
+                num="01"
+                title="CONTACT INFORMATION"
+                desktop={{ top: '5%', left: '2%', width: '380px' }}>
                 <label>Full Name* <input required name="full_name" type="text" onChange={handleChange} /></label>
                 <label>Company Name* <input required name="company_name" type="text" onChange={handleChange} /></label>
                 <label>Job Title <input name="job_title" type="text" onChange={handleChange} /></label>
@@ -369,7 +395,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 03 Services Requested */}
-              <Section num="03" title="SERVICES REQUESTED">
+              <Section num="03" title="SERVICES REQUESTED" desktop={{ top: '18%', left: '2%', width: '380px' }}>
                 <div className="checkbox-group">
                   <label><input type="checkbox" name="services" value="Website Design" onChange={handleCheckboxChange} /> Website Design</label>
                   <label><input type="checkbox" name="services" value="Website Redesign" onChange={handleCheckboxChange} /> Website Redesign</label>
@@ -392,7 +418,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 05 Branding */}
-              <Section num="05" title="BRANDING">
+              <Section num="05" title="BRANDING" desktop={{ top: '32%', left: '2%', width: '380px' }}>
                 <div className="checkbox-group">
                   <label><input type="checkbox" name="current_assets" value="Logo" onChange={handleCheckboxChange} /> Logo</label>
                   <label><input type="checkbox" name="current_assets" value="Brand Colors" onChange={handleCheckboxChange} /> Brand Colors</label>
@@ -405,7 +431,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 07 Social Media */}
-              <Section num="07" title="SOCIAL MEDIA">
+              <Section num="07" title="SOCIAL MEDIA" desktop={{ top: '46%', left: '2%', width: '380px' }}>
                 <label>Facebook <input name="facebook" type="url" onChange={handleChange} /></label>
                 <label>Instagram <input name="instagram" type="url" onChange={handleChange} /></label>
                 <label>TikTok <input name="tiktok" type="url" onChange={handleChange} /></label>
@@ -415,7 +441,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 09 Project Timeline & Budget */}
-              <Section num="09" title="TIMELINE & BUDGET">
+              <Section num="09" title="TIMELINE & BUDGET" desktop={{ top: '60%', left: '2%', width: '380px' }}>
                 <label>Start Date <input name="start_date" type="date" onChange={handleChange} /></label>
                 <label>Completion Date <input name="completion_date" type="date" onChange={handleChange} /></label>
                 <label>Budget <input name="budget" type="text" placeholder="$" onChange={handleChange} /></label>
@@ -423,7 +449,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 11 Preferred Communication */}
-              <Section num="11" title="COMMUNICATION">
+              <Section num="11" title="COMMUNICATION" desktop={{ top: '74%', left: '2%', width: '380px' }}>
                 <div className="checkbox-group">
                   <label><input type="checkbox" name="communication" value="Phone" onChange={handleCheckboxChange} /> Phone</label>
                   <label><input type="checkbox" name="communication" value="Text Message" onChange={handleCheckboxChange} /> Text</label>
@@ -433,17 +459,11 @@ export default function IntakeForm() {
               </Section>
             </div>
 
-            {/* CENTER COLUMN - Can hold messaging or spacing */}
-            <div className="center-column">
-              <div style={{ textAlign: 'center', color: '#00aeff', fontSize: '12px', opacity: 0.6 }}>
-                BUILDING SERVICES<br/>INTEGRATING ACCESS
-              </div>
-            </div>
 
             {/* RIGHT COLUMN */}
             <div className="right-column">
               {/* 02 About Your Business */}
-              <Section num="02" title="ABOUT YOUR BUSINESS">
+              <Section num="02" title="ABOUT YOUR BUSINESS" desktop={{ top: '5%', right: '2%', width: '380px' }}>
                 <label>Describe <textarea name="business_description" onChange={handleChange}></textarea></label>
                 <label>Products/Services <textarea name="products_services" onChange={handleChange}></textarea></label>
                 <label>Target Audience <textarea name="target_audience" onChange={handleChange}></textarea></label>
@@ -451,7 +471,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 04 Project Information */}
-              <Section num="04" title="PROJECT INFORMATION">
+              <Section num="04" title="PROJECT INFORMATION" desktop={{ top: '18%', right: '2%', width: '380px' }}>
                 <label>Project* <textarea required name="project_description" onChange={handleChange}></textarea></label>
                 <label>Primary Goal <textarea name="primary_goal" onChange={handleChange}></textarea></label>
                 <label>Examples <textarea name="examples_like" placeholder="Paste links" onChange={handleChange}></textarea></label>
@@ -459,7 +479,7 @@ export default function IntakeForm() {
               </Section>
 
               {/* 06 Website Information */}
-              <Section num="06" title="WEBSITE INFORMATION">
+              <Section num="06" title="WEBSITE INFORMATION" desktop={{ top: '32%', right: '2%', width: '380px' }}>
                 <label>Current Website <input name="current_website" type="url" placeholder="https://" onChange={handleChange} /></label>
                 <label>Domain <input name="domain_name" type="text" onChange={handleChange} /></label>
                 <label>Hosting <input name="hosting_company" type="text" onChange={handleChange} /></label>
@@ -476,13 +496,13 @@ export default function IntakeForm() {
               </Section>
 
               {/* 08 Business Assets */}
-              <Section num="08" title="BUSINESS ASSETS">
+              <Section num="08" title="BUSINESS ASSETS" desktop={{ top: '46%', right: '2%', width: '380px' }}>
                 <p className="note-text">Upload logos, photos, price lists, guides, docs</p>
                 <input name="files" type="file" multiple onChange={handleFileChange} style={{ padding: '4px', fontSize: '11px' }} />
               </Section>
 
               {/* 10 Login / Access Information */}
-              <Section num="10" title="ACCESS INFORMATION">
+              <Section num="10" title="ACCESS INFORMATION" desktop={{ top: '60%', right: '2%', width: '380px' }}>
                 <div className="warning-box">Do not enter passwords. We'll request separately.</div>
                 <label>Domain Registrar <input name="domain_registrar" type="text" onChange={handleChange} /></label>
                 <label>Hosting <input name="hosting_provider" type="text" onChange={handleChange} /></label>
@@ -494,14 +514,17 @@ export default function IntakeForm() {
               </Section>
 
               {/* 12 Additional Information */}
-              <Section num="12" title="ADDITIONAL INFO">
+              <Section num="12" title="ADDITIONAL INFO" desktop={{ top: '74%', right: '2%', width: '380px' }}>
                 <label>Anything else? <textarea name="additional_info" onChange={handleChange}></textarea></label>
               </Section>
             </div>
           </div>
 
           {/* 13 Client Approval - Full Width Bottom */}
-          <Section num="13" title="CLIENT APPROVAL" style={{ marginTop: '30px' }}>
+          <Section
+            num="13"
+            title="CLIENT APPROVAL"
+            desktop={{ top: '88%', left: '2%', width: 'calc(96% - 20px)' }}>
             <label>Client Name* <input required name="client_name" type="text" onChange={handleChange} /></label>
             <label>Date* <input required name="approval_date" type="date" onChange={handleChange} /></label>
             <label style={{ marginTop: '8px', display: 'flex', alignItems: 'center' }}>
@@ -510,7 +533,7 @@ export default function IntakeForm() {
             </label>
           </Section>
 
-          <button className="submit-button" type="submit" style={{ marginTop: '30px' }}>Submit Client Intake</button>
+          <button className="submit-button" type="submit">Submit Client Intake</button>
         </form>
       </div>
     </div>
