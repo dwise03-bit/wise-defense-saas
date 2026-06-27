@@ -228,9 +228,17 @@ export default function IntakeForm() {
           margin: 0;
           font-family: Arial, Helvetica, sans-serif;
           color: var(--text);
-          background: radial-gradient(circle at top, rgba(0,174,255,.25), transparent 35%), linear-gradient(180deg,#02070d,#000);
         }
         .page {
+          background-image: url('/intake-design.png');
+          background-size: cover;
+          background-position: center;
+          background-attachment: fixed;
+          min-height: 100vh;
+          margin: 0;
+          padding: 0;
+        }
+        .page-inner {
           max-width: 1180px;
           margin: auto;
           padding: 28px;
@@ -346,8 +354,8 @@ export default function IntakeForm() {
       `}</style>
 
       <main className="page">
+        <div className="page-inner">
         <section className="hero">
-          <img src="/intake-design.png" alt="WISE² Design" style={{ width: '100%', maxWidth: '100%', height: 'auto', borderRadius: '16px', marginBottom: '24px' }} />
           <div className="badge">W²</div>
           <h1>WISE² Client Information Form</h1>
           <p>One Platform. Infinite Knowledge. Unlimited Creation.</p>
@@ -520,6 +528,7 @@ export default function IntakeForm() {
 
           <button className="submit" type="submit">Submit Client Intake</button>
         </form>
+        </div>
 
         {submitted && (
           <div style={{
