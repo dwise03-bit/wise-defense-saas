@@ -27,7 +27,7 @@ jobs:
           # Deploy
           ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'EOF'
           set -e
-          cd /home/ubuntu/dev/wise-defense-saas/wise-defense-saas/wise-defense-saas
+          cd /home/ubuntu/dev/wise-defense-saas/wise-defense-saas
 
           # Pull latest code
           git fetch origin
