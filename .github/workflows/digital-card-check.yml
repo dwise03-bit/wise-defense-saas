@@ -1,0 +1,29 @@
+name: Wise Defense digital card checks
+on:
+  push:
+    paths:
+      - 'digital-card/**'
+      - '.github/workflows/digital-card-check.yml'
+  pull_request:
+    paths:
+      - 'digital-card/**'
+      - '.github/workflows/digital-card-check.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate card and required controls
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from html.parser import HTMLParser
+          p=Path('digital-card/index.html')
+          assert p.is_file()
+          html=p.read_text()
+          for required in ['id="save"','id="share"','id="qr"','id="intake"','type="email"','navigator.share','BEGIN:VCARD']:
+              assert required in html, f'Missing: {required}'
+          class Check(HTMLParser): pass
+          Check().feed(html)
+          print('Digital card static smoke checks passed')
+          PY
